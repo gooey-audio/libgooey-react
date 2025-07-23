@@ -1,9 +1,14 @@
+export enum OscType {
+  Triangle,
+  Sine,
+}
+
 export class Oscillator {
   private ctx: AudioContext;
   private gain: GainNode;
   private osc: OscillatorNode;
 
-  constructor(ctx: AudioContext, freq: number) {
+  constructor(ctx: AudioContext, freq: number, type: OscType = OscType.Sine) {
     this.ctx = ctx;
 
     const now = this.ctx.currentTime;
@@ -13,7 +18,15 @@ export class Oscillator {
 
     // TODO
     // find better enum enforcement
-    osc.type = "sine";
+
+    if ((type = OscType.Sine)) {
+      osc.type = "sine";
+    }
+
+    if ((type = OscType.Triangle)) {
+      osc.type = "triangle";
+    }
+
     osc.frequency.setValueAtTime(freq, now);
 
     const gain = ctx.createGain();

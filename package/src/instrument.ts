@@ -1,46 +1,50 @@
 import { Oscillator } from "./oscillator";
+import { Noise } from "./noise";
 
-type InstOscillator = {
-  osc: Oscillator;
+// Define a type for any generator (Oscillator or Noise)
+export type AudioGenerator = Oscillator | Noise;
+
+type InstGenerator = {
+  gen: AudioGenerator;
 };
 
-// an instrument is a collection of oscillators
+// an instrument is a collection of audio generators
 export class Instrument {
   private ctx: AudioContext;
-  private oscialltors: Record<string, InstOscillator>;
+  private generators: Record<string, InstGenerator>;
 
   constructor(audioContext: AudioContext) {
     this.ctx = audioContext;
-    this.oscialltors = {};
+    this.generators = {};
   }
 
-  addOsc(name: string, osc: Oscillator) {
-    this.oscialltors[name] = {
-      osc,
+  addGenerator(name: string, gen: AudioGenerator) {
+    this.generators[name] = {
+      gen,
     };
   }
 
-  // link this oscialltors of this instrument
+  // link this generators of this instrument
   // to the stage
   // could otherwise be down via prop access
   connect(gain: GainNode) {
-    for (const key in this.oscialltors) {
-      if (this.oscialltors.hasOwnProperty(key)) {
-        const osc = this.oscialltors[key].osc;
-        osc.connect(gain);
+    for (const key in this.generators) {
+      if (this.generators.hasOwnProperty(key)) {
+        const gen = this.generators[key].gen;
+        gen.connect(gain);
       }
     }
   }
 
   trigger() {
-    for (const key in this.oscialltors) {
-      if (this.oscialltors.hasOwnProperty(key)) {
-        const osc = this.oscialltors[key].osc;
-        osc.start();
+    for (const key in this.generators) {
+      if (this.generators.hasOwnProperty(key)) {
+        const gen = this.generators[key].gen;
+        gen.start();
 
         // the stop time should really be controlled by
-        // the osciallators own envelop choice
-        osc.stop(this.ctx.currentTime + 0.5);
+        // the generator's own envelope choice
+        gen.stop(this.ctx.currentTime + 0.5);
       }
     }
   }
@@ -54,7 +58,7 @@ export class Instrument {
 
 // class Oneshot extends Instrument {
 //   private ctx: AudioContext;
-
+//
 //   constructor(audioContext: AudioContext) {
 //     super(ctx);
 //   }

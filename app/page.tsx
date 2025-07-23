@@ -3,6 +3,7 @@
 import React from "react";
 import { useLibGooey } from "@/package/src/libgooey";
 import { makeKick } from "@/package/src/kick";
+import { makeSnare } from "@/package/src/snare";
 
 export default function ReactTestPage() {
   const { audioContext, isLoaded, isLoading, error, initialize, stage } =
@@ -17,6 +18,8 @@ export default function ReactTestPage() {
   const triggerKick = () => {
     const ctx = audioContext;
     if (ctx && stage) {
+      // TODO
+      // shouldn't make this on every click
       const kick1 = makeKick(ctx, 200, 800);
 
       const kick2 = makeKick(ctx, 1500, 2000);
@@ -30,6 +33,21 @@ export default function ReactTestPage() {
       stage.trigger("kick2");
 
       console.log("Kick triggered!");
+    }
+  };
+
+  const triggerSnare = () => {
+    const ctx = audioContext;
+    if (ctx && stage) {
+      // TODO
+      // shouldn't make this on every click
+      const snare1 = makeSnare(ctx, 200, 800);
+
+      stage.addInstrument("snare", snare1);
+
+      // TODO
+      // allow trigger of n names
+      stage.trigger("snare");
     }
   };
 
@@ -74,6 +92,7 @@ export default function ReactTestPage() {
       </p>
 
       <button onClick={triggerKick}>Kick</button>
+      <button onClick={triggerSnare}>Snare</button>
     </div>
   );
 }
