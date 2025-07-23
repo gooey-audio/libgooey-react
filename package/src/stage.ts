@@ -1,4 +1,4 @@
-import { Instrument } from "@/src/instrument";
+import { Instrument } from "@/package/src/instrument";
 
 type InstrumentChannel = {
   instrument: Instrument;
