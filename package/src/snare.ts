@@ -31,6 +31,14 @@ export const makeSnare = (ctx: AudioContext, freq1: number, freq2: number, confi
     release: config.decay_time * 0.6  // Longer release than noise
   });
 
+  // Apply pitch envelope to the tonal oscillator
+  osc2.setPitchADSR({
+    attack: 0.001,                   // Instant attack
+    decay: config.decay_time * 0.3,  // Quick pitch drop
+    sustain: 0.0,                    // Drop to base frequency
+    release: config.decay_time * 0.1 // Quick release
+  });
+
   inst.addGenerator("sub", osc1);
   inst.addGenerator("noise", noise);
   inst.addGenerator("tone", osc2);

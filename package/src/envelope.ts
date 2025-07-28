@@ -46,3 +46,45 @@ export class Envelope {
   }
 
 }
+
+export class PitchEnvelope {
+  private ctx: AudioContext;
+  private config: ADSRConfig;
+
+  constructor(ctx: AudioContext, config: ADSRConfig) {
+    this.ctx = ctx;
+    this.config = config;
+  }
+
+  // Apply the ADSR envelope to an oscillator's frequency
+  apply(oscillator: OscillatorNode, baseFrequency: number, pitchRange: number = 1.0, startTime: number = this.ctx.currentTime, noteLength?: number) {
+    const { attack, decay, sustain, release } = this.config;
+    const frequency = oscillator.frequency;
+
+    // Start at base frequency + pitch range (high pitch)
+    const startFreq = baseFrequency + (baseFrequency * pitchRange);
+    const sustainFreq = baseFrequency + (baseFrequency * pitchRange * sustain);
+    
+    frequency.setValueAtTime(startFreq, startTime);
+
+    // Attack phase: stay at high pitch
+    frequency.linearRampToValueAtTime(startFreq, startTime + attack);
+
+    // Decay phase: drop to sustain frequency
+    frequency.exponentialRampToValueAtTime(
+      Math.max(sustainFreq, baseFrequency * 0.1), // Ensure frequency doesn't go too low
+      startTime + attack + decay
+    );
+
+    // If sustain is 0 (like drums), start release immediately after decay
+    // Otherwise, sustain until note release
+    if (sustain === 0 || noteLength !== undefined) {
+      const releaseStart = noteLength !== undefined 
+        ? startTime + noteLength
+        : startTime + attack + decay;
+      
+      // Release phase: return to base frequency
+      frequency.exponentialRampToValueAtTime(baseFrequency, releaseStart + release);
+    }
+  }
+}

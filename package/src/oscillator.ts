@@ -1,4 +1,4 @@
-import { Envelope, ADSRConfig } from "./envelope";
+import { Envelope, PitchEnvelope, ADSRConfig } from "./envelope";
 
 export enum OscType {
   Triangle,
@@ -10,9 +10,12 @@ export class Oscillator {
   private gain: GainNode;
   private osc: OscillatorNode;
   private envelope?: Envelope;
+  private pitchEnvelope?: PitchEnvelope;
+  private baseFrequency: number;
 
   constructor(ctx: AudioContext, freq: number, type: OscType = OscType.Sine) {
     this.ctx = ctx;
+    this.baseFrequency = freq;
 
     const now = this.ctx.currentTime;
 
@@ -49,6 +52,10 @@ export class Oscillator {
     this.envelope = new Envelope(this.ctx, config);
   }
 
+  setPitchADSR(config: ADSRConfig) {
+    this.pitchEnvelope = new PitchEnvelope(this.ctx, config);
+  }
+
   start() {
     this.osc.start();
     
@@ -60,6 +67,11 @@ export class Oscillator {
       const now = this.ctx.currentTime;
       this.gain.gain.setValueAtTime(1, now);
       this.gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+    }
+
+    // Apply pitch envelope if one is set
+    if (this.pitchEnvelope) {
+      this.pitchEnvelope.apply(this.osc, this.baseFrequency, 0.5); // 50% pitch range for nice effect
     }
   }
 
