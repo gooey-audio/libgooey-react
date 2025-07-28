@@ -45,8 +45,4 @@ export class Envelope {
     // until stop() is called with a future time
   }
 
-  // Helper method to create an ADSRConfig
-  static createConfig(attack: number, decay: number, sustain: number, release: number): ADSRConfig {
-    return { attack, decay, sustain, release };
-  }
 }

@@ -1,7 +1,10 @@
+import { Envelope, ADSRConfig } from "./envelope";
+
 export class Noise {
   private ctx: AudioContext;
   private gain: GainNode;
   private bufferSource: AudioBufferSourceNode;
+  private envelope?: Envelope;
 
   constructor(ctx: AudioContext) {
     this.ctx = ctx;
@@ -26,8 +29,17 @@ export class Noise {
     this.gain.connect(gain);
   }
 
+  setADSR(config: ADSRConfig) {
+    this.envelope = new Envelope(this.ctx, config);
+  }
+
   start() {
     this.bufferSource.start();
+    
+    // Apply envelope if one is set
+    if (this.envelope) {
+      this.envelope.apply(this.gain);
+    }
   }
 
   stop(future: number) {
