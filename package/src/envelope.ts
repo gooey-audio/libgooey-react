@@ -45,19 +45,8 @@ export class Envelope {
     // until stop() is called with a future time
   }
 
-}
-
-export class PitchEnvelope {
-  private ctx: AudioContext;
-  private config: ADSRConfig;
-
-  constructor(ctx: AudioContext, config: ADSRConfig) {
-    this.ctx = ctx;
-    this.config = config;
-  }
-
   // Apply the ADSR envelope to an oscillator's frequency
-  apply(oscillator: OscillatorNode, baseFrequency: number, pitchRange: number = 1.0, startTime: number = this.ctx.currentTime, noteLength?: number) {
+  applyToPitch(oscillator: OscillatorNode, baseFrequency: number, pitchRange: number = 1.0, startTime: number = this.ctx.currentTime, noteLength?: number) {
     const { attack, decay, sustain, release } = this.config;
     const frequency = oscillator.frequency;
 
@@ -87,4 +76,6 @@ export class PitchEnvelope {
       frequency.exponentialRampToValueAtTime(baseFrequency, releaseStart + release);
     }
   }
+
 }
+
