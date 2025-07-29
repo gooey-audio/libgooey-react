@@ -4,6 +4,7 @@ import React from "react";
 import { useLibGooey } from "@/package/src/libgooey";
 import { makeKick } from "@/package/src/kick";
 import { makeSnare } from "@/package/src/snare";
+import { makeClosedHiHat } from "@/package/src/hihat";
 
 export default function ReactTestPage() {
   const { audioContext, isLoaded, isLoading, error, initialize, stage } =
@@ -51,6 +52,23 @@ export default function ReactTestPage() {
     }
   };
 
+  const triggerHiHat = () => {
+    const ctx = audioContext;
+    if (ctx && stage) {
+      // TODO
+      // shouldn't make this on every click
+      const hihat1 = makeClosedHiHat(ctx);
+
+      stage.addInstrument("hihat", hihat1);
+
+      // TODO
+      // allow trigger of n names
+      stage.trigger("hihat");
+
+      console.log("HiHat triggered!");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-8">
@@ -93,6 +111,7 @@ export default function ReactTestPage() {
 
       <button onClick={triggerKick}>Kick</button>
       <button onClick={triggerSnare}>Snare</button>
+      <button onClick={triggerHiHat}>HiHat</button>
     </div>
   );
 }
