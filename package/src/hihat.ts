@@ -61,7 +61,7 @@ export const makeOpenHiHat = (ctx: AudioContext) => {
   const brightnessNoise = new Noise(ctx);
 
   // High-frequency oscillator for metallic character
-  const metallicOsc = new Oscillator(ctx, 8000.0, OscType.Sine);
+  const metallicOsc = new Oscillator(ctx, 5000.0, OscType.Sine);
 
   // Open hi-hat: longer decay, more sustain
   mainNoise.setADSR({
@@ -81,8 +81,8 @@ export const makeOpenHiHat = (ctx: AudioContext) => {
   metallicOsc.setADSR({
     attack: 0.001, // Quick attack
     decay: 0.32, // Medium decay
-    sustain: 0.2, // Low sustain
-    release: 0.48, // Longer release for open sound
+    sustain: 0.05, // Very low sustain
+    release: 0.24, // Medium release for open sound
   });
 
   // Add pitch envelope to metallic oscillator for more character
