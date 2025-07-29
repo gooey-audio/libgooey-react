@@ -4,7 +4,7 @@ import React from "react";
 import { useLibGooey } from "@/package/src/libgooey";
 import { makeKick } from "@/package/src/kick";
 import { makeSnare } from "@/package/src/snare";
-import { makeClosedHiHat } from "@/package/src/hihat";
+import { makeClosedHiHat, makeOpenHiHat } from "@/package/src/hihat";
 
 export default function ReactTestPage() {
   const { audioContext, isLoaded, isLoading, error, initialize, stage } =
@@ -52,20 +52,37 @@ export default function ReactTestPage() {
     }
   };
 
-  const triggerHiHat = () => {
+  const triggerClosedHiHat = () => {
     const ctx = audioContext;
     if (ctx && stage) {
       // TODO
       // shouldn't make this on every click
-      const hihat1 = makeClosedHiHat(ctx);
+      const closedHihat = makeClosedHiHat(ctx);
 
-      stage.addInstrument("hihat", hihat1);
+      stage.addInstrument("closedHihat", closedHihat);
 
       // TODO
       // allow trigger of n names
-      stage.trigger("hihat");
+      stage.trigger("closedHihat");
 
-      console.log("HiHat triggered!");
+      console.log("Closed HiHat triggered!");
+    }
+  };
+
+  const triggerOpenHiHat = () => {
+    const ctx = audioContext;
+    if (ctx && stage) {
+      // TODO
+      // shouldn't make this on every click
+      const openHihat = makeOpenHiHat(ctx);
+
+      stage.addInstrument("openHihat", openHihat);
+
+      // TODO
+      // allow trigger of n names
+      stage.trigger("openHihat");
+
+      console.log("Open HiHat triggered!");
     }
   };
 
@@ -111,7 +128,8 @@ export default function ReactTestPage() {
 
       <button onClick={triggerKick}>Kick</button>
       <button onClick={triggerSnare}>Snare</button>
-      <button onClick={triggerHiHat}>HiHat</button>
+      <button onClick={triggerClosedHiHat}>Closed HiHat</button>
+      <button onClick={triggerOpenHiHat}>Open HiHat</button>
     </div>
   );
 }
