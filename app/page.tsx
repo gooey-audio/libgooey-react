@@ -4,6 +4,7 @@ import React from "react";
 import { useLibGooey } from "@/package/src/libgooey";
 import { makeKick } from "@/package/src/kick";
 import { makeSnare } from "@/package/src/snare";
+import { makeClosedHiHat, makeOpenHiHat } from "@/package/src/hihat";
 
 export default function ReactTestPage() {
   const { audioContext, isLoaded, isLoading, error, initialize, stage } =
@@ -51,6 +52,40 @@ export default function ReactTestPage() {
     }
   };
 
+  const triggerClosedHiHat = () => {
+    const ctx = audioContext;
+    if (ctx && stage) {
+      // TODO
+      // shouldn't make this on every click
+      const closedHihat = makeClosedHiHat(ctx);
+
+      stage.addInstrument("closedHihat", closedHihat);
+
+      // TODO
+      // allow trigger of n names
+      stage.trigger("closedHihat");
+
+      console.log("Closed HiHat triggered!");
+    }
+  };
+
+  const triggerOpenHiHat = () => {
+    const ctx = audioContext;
+    if (ctx && stage) {
+      // TODO
+      // shouldn't make this on every click
+      const openHihat = makeOpenHiHat(ctx);
+
+      stage.addInstrument("openHihat", openHihat);
+
+      // TODO
+      // allow trigger of n names
+      stage.trigger("openHihat");
+
+      console.log("Open HiHat triggered!");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-8">
@@ -93,6 +128,8 @@ export default function ReactTestPage() {
 
       <button onClick={triggerKick}>Kick</button>
       <button onClick={triggerSnare}>Snare</button>
+      <button onClick={triggerClosedHiHat}>Closed HiHat</button>
+      <button onClick={triggerOpenHiHat}>Open HiHat</button>
     </div>
   );
 }
