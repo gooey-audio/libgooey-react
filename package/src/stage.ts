@@ -46,8 +46,12 @@ export class Stage {
   // check that name exists
   trigger(name: string) {
     const instChannel = this.instruments[name];
-
     instChannel.instrument.trigger();
+  }
+
+  triggerAt(name: string, time: number) {
+    const instChannel = this.instruments[name];
+    instChannel.instrument.triggerAt(time);
   }
 
   // TODO

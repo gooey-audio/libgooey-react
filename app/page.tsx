@@ -1,15 +1,18 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import { useLibGooey } from "@/package/src/libgooey";
 import { makeKick } from "@/package/src/kick";
 import { makeSnare } from "@/package/src/snare";
+import { Sequencer } from "@/package/src/sequencer";
 
 export default function ReactTestPage() {
   const { audioContext, isLoaded, isLoading, error, initialize, stage } =
     useLibGooey({
       autoInit: false, // Manual initialization for demo
     });
+
+  const sequencerRef = useRef<Sequencer | null>(null);
 
   const handleInitialize = async () => {
     await initialize();
@@ -48,6 +51,37 @@ export default function ReactTestPage() {
       // TODO
       // allow trigger of n names
       stage.trigger("snare");
+    }
+  };
+
+  const startSequencer = () => {
+    const ctx = audioContext;
+    if (ctx && stage && !sequencerRef.current) {
+
+      //
+      const kick = makeKick(ctx, 200, 800);
+      stage.addInstrument("kick", kick);
+
+      const sequencer = new Sequencer(ctx, {
+        tempo: 120,
+        stage,
+        // for now lets assume that we'll reference the instruments by name
+        // could make sense to validate that they exist during constructor
+        pattern: {
+          // could be cool to make helpers for generating these
+          kick: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+        },
+      });
+
+      sequencerRef.current = sequencer;
+      sequencer.start();
+    }
+  };
+
+  const stopSequencer = () => {
+    if (sequencerRef.current) {
+      sequencerRef.current.stop();
+      sequencerRef.current = null;
     }
   };
 
@@ -93,6 +127,8 @@ export default function ReactTestPage() {
 
       <button onClick={triggerKick}>Kick</button>
       <button onClick={triggerSnare}>Snare</button>
+      <button onClick={startSequencer}>Start Sequencer</button>
+      <button onClick={stopSequencer}>Stop Sequencer</button>
     </div>
   );
 }

@@ -37,10 +37,14 @@ export class Instrument {
   }
 
   trigger() {
+    this.triggerAt(this.ctx.currentTime);
+  }
+
+  triggerAt(time: number) {
     for (const key in this.generators) {
       if (this.generators.hasOwnProperty(key)) {
         const gen = this.generators[key].gen;
-        gen.start();
+        gen.start(time);
 
         // the stop time should really be controlled by
         // the generator's own envelope choice

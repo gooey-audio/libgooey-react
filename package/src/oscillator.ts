@@ -56,9 +56,9 @@ export class Oscillator {
     this.pitchEnvelope = new Envelope(this.ctx, config);
   }
 
-  start() {
-    this.osc.start();
-    
+  start(time: number) {
+    this.osc.start(time);
+
     // Apply envelope if one is set
     if (this.envelope) {
       this.envelope.apply(this.gain);
