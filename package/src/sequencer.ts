@@ -18,10 +18,13 @@ export class Sequencer {
   private secondsPerBeat;
   private lookahead;
   private scheduleAheadTime;
-  private intervalRef;
+  private intervalRef: NodeJS.Timeout | undefined;
   private nextNoteTime;
   private sixteenthNoteTime;
   private current16thNote;
+
+  public startTime: number | undefined;
+  public currentBeat: number = 0;
 
   constructor(ctx: AudioContext, opts: SequencerOpts) {
     this.ctx = ctx;
@@ -71,6 +74,7 @@ export class Sequencer {
   private advanceNextNote() {
     this.nextNoteTime += this.sixteenthNoteTime;
     this.current16thNote++;
+    this.currentBeat = this.current16thNote;
     if (this.current16thNote === 16) this.current16thNote = 0;
   }
 
@@ -83,6 +87,7 @@ export class Sequencer {
   }
 
   public start() {
+    this.startTime = this.ctx.currentTime
     this.intervalRef = setInterval(this.scheduler.bind(this), this.lookahead);
   }
 

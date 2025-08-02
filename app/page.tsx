@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { useLibGooey } from "@/package/src/libgooey";
 import { makeKick } from "@/package/src/kick";
 import { makeSnare } from "@/package/src/snare";
 import { Sequencer } from "@/package/src/sequencer";
 
 export default function ReactTestPage() {
+  const [step, setCurrentStep] = useState(0);
+
   const { audioContext, isLoaded, isLoading, error, initialize, stage } =
     useLibGooey({
       autoInit: false, // Manual initialization for demo
@@ -58,6 +60,9 @@ export default function ReactTestPage() {
     const ctx = audioContext;
     if (ctx && stage && !sequencerRef.current) {
       //
+
+      const startTime = ctx.currentTime;
+
       const kick = makeKick(ctx, 50, 300);
       stage.addInstrument("kick", kick);
 
@@ -82,6 +87,45 @@ export default function ReactTestPage() {
 
       sequencerRef.current = sequencer;
       sequencer.start();
+
+      // let currentBeat = 0;
+      const bpm = 120; // Beats per minute
+      const beatsPerSecond = bpm / 60;
+      const sixteenthNoteDurationSeconds = 60 / (4 * bpm);
+
+      console.log("duration seconds", sixteenthNoteDurationSeconds);
+
+      // let startTime = 0;
+
+      // Your sequencer function, e.g., called when starting the sequence.
+      // function startSequencer() {
+      // currentBeat = 0;
+      // startTime = audioContext.currentTime;
+
+      // }
+
+      // Update the current beat based on the elapsed time since the sequencer started.
+      function updateCurrentBeat() {
+        if (sequencer.startTime && ctx) {
+          // Use the sequencer's current beat directly
+          const current = sequencer.currentBeat;
+
+          console.log("current", current);
+
+          if (step != current) {
+            setCurrentStep(current);
+          }
+
+          if (sequencerRef.current) {
+            requestAnimationFrame(updateCurrentBeat);
+          }
+        }
+      }
+
+      requestAnimationFrame(updateCurrentBeat);
+
+      // Start the sequencer when desired, e.g., on user action.
+      startSequencer();
     }
   };
 
@@ -136,6 +180,38 @@ export default function ReactTestPage() {
       <button onClick={triggerSnare}>Snare</button>
       <button onClick={startSequencer}>Start Sequencer</button>
       <button onClick={stopSequencer}>Stop Sequencer</button>
+
+      <div className="flex gap-1 my-6">
+        {Array.from({ length: 16 }).map((_, i) => (
+          <svg
+            key={i}
+            width={24}
+            height={24}
+            style={{
+              border: "1px solid #ccc",
+              background: i === step ? "#3b82f6" : "#f3f4f6",
+              borderRadius: 4,
+              boxShadow: i === step ? "0 0 0 2px #2563eb" : undefined,
+              transition: "background 0.2s, box-shadow 0.2s",
+            }}
+          >
+            <rect
+              x={2}
+              y={2}
+              width={20}
+              height={20}
+              fill={i === step ? "#3b82f6" : "#e5e7eb"}
+              stroke="#9ca3af"
+              strokeWidth={i === step ? 2 : 1}
+              rx={4}
+            />
+          </svg>
+        ))}
+      </div>
+
+      <div>
+        <h3>{step}</h3>
+      </div>
     </div>
   );
 }
