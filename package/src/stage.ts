@@ -26,15 +26,15 @@ export class Stage {
     const gain = this.ctx.createGain();
 
     //
-    gain.gain.setValueAtTime(1, this.ctx.currentTime);
+    // gain.gain.setValueAtTime(1, this.ctx.currentTime);
 
     // link gain to ctx
-    gain.connect(this.ctx.destination);
+    // gain.connect(this.ctx.destination);
 
     // link incomming instrument
     // to its _own_ gain channel
     // so stage can do mix down
-    instrument.connect(gain);
+    // instrument.connect(gain);
 
     this.instruments[name] = {
       instrument,

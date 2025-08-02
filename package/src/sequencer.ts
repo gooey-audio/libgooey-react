@@ -33,7 +33,7 @@ export class Sequencer {
 
     this.secondsPerBeat = 60.0 / this.tempo;
     this.sixteenthNoteTime = this.secondsPerBeat / 4;
-    this.lookahead = 25;
+    this.lookahead = 15;
     this.scheduleAheadTime = 0.1;
     this.nextNoteTime = ctx.currentTime;
     this.current16thNote = 0;
@@ -53,7 +53,7 @@ export class Sequencer {
       }
     });
 
-    console.log("totrip", toTrigger);
+    console.log("to trig", toTrigger);
 
     toTrigger.forEach(instName => {
       this.stage.triggerAt(instName, time)

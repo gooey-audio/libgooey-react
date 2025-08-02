@@ -57,10 +57,15 @@ export default function ReactTestPage() {
   const startSequencer = () => {
     const ctx = audioContext;
     if (ctx && stage && !sequencerRef.current) {
-
       //
-      const kick = makeKick(ctx, 200, 800);
+      const kick = makeKick(ctx, 50, 300);
       stage.addInstrument("kick", kick);
+
+      const snare = makeKick(ctx, 400, 800);
+      stage.addInstrument("snare", snare);
+
+      const hat = makeSnare(ctx, 200, 800);
+      stage.addInstrument("hat", hat);
 
       const sequencer = new Sequencer(ctx, {
         tempo: 120,
@@ -70,6 +75,8 @@ export default function ReactTestPage() {
         pattern: {
           // could be cool to make helpers for generating these
           kick: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+          snare: [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+          hat: [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1],
         },
       });
 
