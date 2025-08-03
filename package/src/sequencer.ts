@@ -36,7 +36,7 @@ export class Sequencer {
 
     this.secondsPerBeat = 60.0 / this.tempo;
     this.sixteenthNoteTime = this.secondsPerBeat / 4;
-    this.lookahead = 15;
+    this.lookahead = 25;
     this.scheduleAheadTime = 0.1;
     this.nextNoteTime = ctx.currentTime;
     this.current16thNote = 0;
@@ -58,9 +58,9 @@ export class Sequencer {
 
     console.log("to trig", toTrigger);
 
-    toTrigger.forEach(instName => {
-      this.stage.triggerAt(instName, time)
-    })
+    toTrigger.forEach((instName) => {
+      this.stage.triggerAt(instName, time);
+    });
 
     // const osc = this.ctx.createOscillator();
     // const gain = this.ctx.createGain();
@@ -69,6 +69,10 @@ export class Sequencer {
     // osc.frequency.value = 440;
     // osc.start(time);
     // osc.stop(time + 0.02);
+  }
+
+  public getSixteenthNoteTime() {
+    return this.secondsPerBeat / 4;
   }
 
   private advanceNextNote() {
@@ -87,7 +91,7 @@ export class Sequencer {
   }
 
   public start() {
-    this.startTime = this.ctx.currentTime
+    this.startTime = this.ctx.currentTime;
     this.intervalRef = setInterval(this.scheduler.bind(this), this.lookahead);
   }
 
@@ -95,5 +99,23 @@ export class Sequencer {
     if (this.intervalRef) {
       clearInterval(this.intervalRef);
     }
+  }
+
+  public setPattern(instrumentName: string, pattern: number[]) {
+    this.pattern[instrumentName] = [...pattern]; // Create a copy to avoid mutation issues
+  }
+
+  public getPattern(instrumentName: string): number[] | undefined {
+    return this.pattern[instrumentName] ? [...this.pattern[instrumentName]] : undefined;
+  }
+
+  // todo rename
+  public getAllPatterns(): PatternDef {
+    // Return a deep copy to prevent external mutation
+    const copy: PatternDef = {};
+    Object.entries(this.pattern).forEach(([key, value]) => {
+      copy[key] = [...value];
+    });
+    return copy;
   }
 }

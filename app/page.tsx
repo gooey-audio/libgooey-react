@@ -8,6 +8,11 @@ import { Sequencer } from "@/package/src/sequencer";
 
 export default function ReactTestPage() {
   const [step, setCurrentStep] = useState(0);
+  const [patterns, setPatterns] = useState({
+    kick: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+    snare: [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+    hat: [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1],
+  });
 
   const { audioContext, isLoaded, isLoading, error, initialize, stage } =
     useLibGooey({
@@ -18,6 +23,37 @@ export default function ReactTestPage() {
 
   const handleInitialize = async () => {
     await initialize();
+  };
+
+  const handlePatternClick = (instrumentName: string, stepIndex: number) => {
+    setPatterns(prev => {
+      const newPatterns = { ...prev };
+      const instrumentPattern = [...newPatterns[instrumentName as keyof typeof prev]];
+      instrumentPattern[stepIndex] = instrumentPattern[stepIndex] === 1 ? 0 : 1;
+      newPatterns[instrumentName as keyof typeof prev] = instrumentPattern;
+      
+      // Update the sequencer pattern if it's running
+      if (sequencerRef.current) {
+        sequencerRef.current.setPattern(instrumentName, instrumentPattern);
+      }
+      
+      return newPatterns;
+    });
+  };
+
+  const handleClearPattern = (instrumentName: string) => {
+    setPatterns(prev => {
+      const newPatterns = { ...prev };
+      const clearedPattern = new Array(16).fill(0);
+      newPatterns[instrumentName as keyof typeof prev] = clearedPattern;
+      
+      // Update the sequencer pattern if it's running
+      if (sequencerRef.current) {
+        sequencerRef.current.setPattern(instrumentName, clearedPattern);
+      }
+      
+      return newPatterns;
+    });
   };
 
   const triggerKick = () => {
@@ -77,12 +113,7 @@ export default function ReactTestPage() {
         stage,
         // for now lets assume that we'll reference the instruments by name
         // could make sense to validate that they exist during constructor
-        pattern: {
-          // could be cool to make helpers for generating these
-          kick: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
-          snare: [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-          hat: [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1],
-        },
+        pattern: patterns,
       });
 
       sequencerRef.current = sequencer;
@@ -104,25 +135,41 @@ export default function ReactTestPage() {
 
       // }
 
-      // Update the current beat based on the elapsed time since the sequencer started.
       function updateCurrentBeat() {
-        if (sequencer.startTime && ctx) {
-          // Use the sequencer's current beat directly
-          const current = sequencer.currentBeat;
+        if (
+          sequencerRef.current &&
+          sequencerRef.current.startTime &&
+          audioContext
+        ) {
+          const sequencer = sequencerRef.current;
+          const ctx = audioContext;
 
-          console.log("current", current);
+          // Calculate elapsed time since start
+          const elapsedTime = ctx.currentTime - (sequencer.startTime || 0);
 
-          if (step != current) {
-            setCurrentStep(current);
+          // Duration of one 16th note (you could also calculate this here if not exposing it)
+          const sixteenthNoteDuration = sequencer.getSixteenthNoteTime();
+
+          // Total 16th notes elapsed (use floor to get the current discrete step)
+          const totalSixteenthsElapsed = Math.floor(
+            elapsedTime / sixteenthNoteDuration
+          );
+
+          // Modulo 16 to get the current step (0-15), looping infinitely
+          const currentStep = (totalSixteenthsElapsed % 16) + 1;
+
+          // Update state if changed (prevents unnecessary re-renders)
+          if (step !== currentStep) {
+            console.log(`Step changed from ${step} to ${currentStep}`);
+            setCurrentStep(currentStep);
           }
 
-          if (sequencerRef.current) {
-            requestAnimationFrame(updateCurrentBeat);
-          }
+          // Continue the animation loop
+          requestAnimationFrame(updateCurrentBeat);
         }
       }
 
-      requestAnimationFrame(updateCurrentBeat);
+      updateCurrentBeat();
 
       // Start the sequencer when desired, e.g., on user action.
       startSequencer();
@@ -169,6 +216,8 @@ export default function ReactTestPage() {
     );
   }
 
+  const instruments = Object.keys(patterns);
+
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">LibGooey React Hook Test</h1>
@@ -181,36 +230,62 @@ export default function ReactTestPage() {
       <button onClick={startSequencer}>Start Sequencer</button>
       <button onClick={stopSequencer}>Stop Sequencer</button>
 
-      <div className="flex gap-1 my-6">
-        {Array.from({ length: 16 }).map((_, i) => (
-          <svg
-            key={i}
-            width={24}
-            height={24}
-            style={{
-              border: "1px solid #ccc",
-              background: i === step ? "#3b82f6" : "#f3f4f6",
-              borderRadius: 4,
-              boxShadow: i === step ? "0 0 0 2px #2563eb" : undefined,
-              transition: "background 0.2s, box-shadow 0.2s",
-            }}
-          >
-            <rect
-              x={2}
-              y={2}
-              width={20}
-              height={20}
-              fill={i === step ? "#3b82f6" : "#e5e7eb"}
-              stroke="#9ca3af"
-              strokeWidth={i === step ? 2 : 1}
-              rx={4}
-            />
-          </svg>
-        ))}
+      <div className="my-6">
+        <h3 className="text-lg font-semibold mb-3">Sequencer Pattern</h3>
+        <div className="space-y-2">
+          {instruments.map((instrument) => (
+            <div key={instrument} className="flex items-center gap-2">
+              <div className="w-16 text-sm font-medium text-gray-700">
+                {instrument}
+              </div>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => handleClearPattern(instrument)}
+                  className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                  title="Clear pattern"
+                >
+                  Clear
+                </button>
+                {Array.from({ length: 16 }).map((_, i) => {
+                  const isActive = patterns[instrument as keyof typeof patterns][i] === 1;
+                  const isCurrentStep = i === step - 1; // step is 1-indexed, array is 0-indexed
+                  
+                  return (
+                    <svg
+                      key={i}
+                      width={24}
+                      height={24}
+                      style={{
+                        border: "1px solid #ccc",
+                        background: isCurrentStep ? "#3b82f6" : isActive ? "#10b981" : "#f3f4f6",
+                        borderRadius: 4,
+                        boxShadow: isCurrentStep ? "0 0 0 2px #2563eb" : undefined,
+                        transition: "background 0.2s, box-shadow 0.2s",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => handlePatternClick(instrument, i)}
+                    >
+                      <rect
+                        x={2}
+                        y={2}
+                        width={20}
+                        height={20}
+                        fill={isCurrentStep ? "#3b82f6" : isActive ? "#10b981" : "#e5e7eb"}
+                        stroke="#9ca3af"
+                        strokeWidth={isCurrentStep ? 2 : 1}
+                        rx={4}
+                      />
+                    </svg>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div>
-        <h3>{step}</h3>
+        <h3>Current Step: {step}</h3>
       </div>
     </div>
   );
