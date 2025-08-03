@@ -26,32 +26,34 @@ export default function ReactTestPage() {
   };
 
   const handlePatternClick = (instrumentName: string, stepIndex: number) => {
-    setPatterns(prev => {
+    setPatterns((prev) => {
       const newPatterns = { ...prev };
-      const instrumentPattern = [...newPatterns[instrumentName as keyof typeof prev]];
+      const instrumentPattern = [
+        ...newPatterns[instrumentName as keyof typeof prev],
+      ];
       instrumentPattern[stepIndex] = instrumentPattern[stepIndex] === 1 ? 0 : 1;
       newPatterns[instrumentName as keyof typeof prev] = instrumentPattern;
-      
+
       // Update the sequencer pattern if it's running
       if (sequencerRef.current) {
         sequencerRef.current.setPattern(instrumentName, instrumentPattern);
       }
-      
+
       return newPatterns;
     });
   };
 
   const handleClearPattern = (instrumentName: string) => {
-    setPatterns(prev => {
+    setPatterns((prev) => {
       const newPatterns = { ...prev };
       const clearedPattern = new Array(16).fill(0);
       newPatterns[instrumentName as keyof typeof prev] = clearedPattern;
-      
+
       // Update the sequencer pattern if it's running
       if (sequencerRef.current) {
         sequencerRef.current.setPattern(instrumentName, clearedPattern);
       }
-      
+
       return newPatterns;
     });
   };
@@ -247,19 +249,26 @@ export default function ReactTestPage() {
                   Clear
                 </button>
                 {Array.from({ length: 16 }).map((_, i) => {
-                  const isActive = patterns[instrument as keyof typeof patterns][i] === 1;
+                  const isActive =
+                    patterns[instrument as keyof typeof patterns][i] === 1;
                   const isCurrentStep = i === step - 1; // step is 1-indexed, array is 0-indexed
-                  
+
                   return (
                     <svg
                       key={i}
                       width={24}
                       height={24}
                       style={{
-                        border: "1px solid #ccc",
-                        background: isCurrentStep ? "#3b82f6" : isActive ? "#10b981" : "#f3f4f6",
-                        borderRadius: 4,
-                        boxShadow: isCurrentStep ? "0 0 0 2px #2563eb" : undefined,
+                        // border: "1px solid #ccc",
+                        background: isCurrentStep
+                          ? "#3b82f6"
+                          : isActive
+                            ? "#10b981"
+                            : "#f3f4f6",
+                        borderRadius: 2,
+                        boxShadow: isCurrentStep
+                          ? "0 0 0 2px #2563eb"
+                          : undefined,
                         transition: "background 0.2s, box-shadow 0.2s",
                         cursor: "pointer",
                       }}
@@ -270,9 +279,15 @@ export default function ReactTestPage() {
                         y={2}
                         width={20}
                         height={20}
-                        fill={isCurrentStep ? "#3b82f6" : isActive ? "#10b981" : "#e5e7eb"}
-                        stroke="#9ca3af"
-                        strokeWidth={isCurrentStep ? 2 : 1}
+                        fill={
+                          isCurrentStep
+                            ? "#3b82f6"
+                            : isActive
+                              ? "#10b981"
+                              : "#e5e7eb"
+                        }
+                        
+                        
                         rx={4}
                       />
                     </svg>
