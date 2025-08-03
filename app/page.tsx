@@ -5,9 +5,9 @@ import { useLibGooey } from "@/package/src/libgooey";
 import { makeKick } from "@/package/src/kick";
 import { makeSnare } from "@/package/src/snare";
 import { Sequencer } from "@/package/src/sequencer";
+import { useBeatTracker } from "@/package/src/hooks";
 
 export default function ReactTestPage() {
-  const [step, setCurrentStep] = useState(0);
   const [patterns, setPatterns] = useState({
     kick: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
     snare: [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
@@ -20,6 +20,11 @@ export default function ReactTestPage() {
     });
 
   const sequencerRef = useRef<Sequencer | null>(null);
+
+  const { currentStep, startBeatTracking, stopBeatTracking } = useBeatTracker({
+    audioContext,
+    sequencerRef,
+  });
 
   const handleInitialize = async () => {
     await initialize();
@@ -96,9 +101,8 @@ export default function ReactTestPage() {
 
   const startSequencer = () => {
     const ctx = audioContext;
-    if (ctx && stage && !sequencerRef.current) {
-      //
 
+    if (ctx && stage && !sequencerRef.current) {
       const startTime = ctx.currentTime;
 
       const kick = makeKick(ctx, 50, 300);
@@ -121,57 +125,8 @@ export default function ReactTestPage() {
       sequencerRef.current = sequencer;
       sequencer.start();
 
-      // let currentBeat = 0;
-      const bpm = 120; // Beats per minute
-      const beatsPerSecond = bpm / 60;
-      const sixteenthNoteDurationSeconds = 60 / (4 * bpm);
-
-      console.log("duration seconds", sixteenthNoteDurationSeconds);
-
-      // let startTime = 0;
-
-      // Your sequencer function, e.g., called when starting the sequence.
-      // function startSequencer() {
-      // currentBeat = 0;
-      // startTime = audioContext.currentTime;
-
-      // }
-
-      function updateCurrentBeat() {
-        if (
-          sequencerRef.current &&
-          sequencerRef.current.startTime &&
-          audioContext
-        ) {
-          const sequencer = sequencerRef.current;
-          const ctx = audioContext;
-
-          // Calculate elapsed time since start
-          const elapsedTime = ctx.currentTime - (sequencer.startTime || 0);
-
-          // Duration of one 16th note (you could also calculate this here if not exposing it)
-          const sixteenthNoteDuration = sequencer.getSixteenthNoteTime();
-
-          // Total 16th notes elapsed (use floor to get the current discrete step)
-          const totalSixteenthsElapsed = Math.floor(
-            elapsedTime / sixteenthNoteDuration
-          );
-
-          // Modulo 16 to get the current step (0-15), looping infinitely
-          const currentStep = (totalSixteenthsElapsed % 16) + 1;
-
-          // Update state if changed (prevents unnecessary re-renders)
-          if (step !== currentStep) {
-            console.log(`Step changed from ${step} to ${currentStep}`);
-            setCurrentStep(currentStep);
-          }
-
-          // Continue the animation loop
-          requestAnimationFrame(updateCurrentBeat);
-        }
-      }
-
-      updateCurrentBeat();
+      // Start beat tracking
+      startBeatTracking();
 
       // Start the sequencer when desired, e.g., on user action.
       startSequencer();
@@ -183,6 +138,7 @@ export default function ReactTestPage() {
       sequencerRef.current.stop();
       sequencerRef.current = null;
     }
+    stopBeatTracking();
   };
 
   if (isLoading) {
@@ -251,7 +207,7 @@ export default function ReactTestPage() {
                 {Array.from({ length: 16 }).map((_, i) => {
                   const isActive =
                     patterns[instrument as keyof typeof patterns][i] === 1;
-                  const isCurrentStep = i === step - 1; // step is 1-indexed, array is 0-indexed
+                  const isCurrentStep = i === currentStep - 1; // currentStep is 1-indexed, array is 0-indexed
 
                   return (
                     <svg
@@ -286,8 +242,6 @@ export default function ReactTestPage() {
                               ? "#10b981"
                               : "#e5e7eb"
                         }
-                        
-                        
                         rx={4}
                       />
                     </svg>
@@ -300,7 +254,7 @@ export default function ReactTestPage() {
       </div>
 
       <div>
-        <h3>Current Step: {step}</h3>
+        <h3>Current Step: {currentStep}</h3>
       </div>
     </div>
   );
