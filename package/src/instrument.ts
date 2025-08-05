@@ -36,25 +36,25 @@ export class Instrument {
   //   }
   // }
 
-    // trigger sort of only makes sense for "oneshot instruments"
-    trigger() {
-      this.triggerAt(this.ctx.currentTime);
-    }
-  
-    triggerAt(time: number) {
-      for (const key in this.generators) {
-        if (this.generators.hasOwnProperty(key)) {
-          const gen = this.generators[key].gen;
-          const osc = gen.start(time);
-  
-          if (osc) {
-            // the stop time should really be controlled by
-            // the generator's own envelope choice
-            osc.stop(this.ctx.currentTime + 0.5);
-          }
+  // trigger sort of only makes sense for "oneshot instruments"
+  trigger(destination?: AudioNode) {
+    this.triggerAt(this.ctx.currentTime, destination);
+  }
+
+  triggerAt(time: number, destination?: AudioNode) {
+    for (const key in this.generators) {
+      if (this.generators.hasOwnProperty(key)) {
+        const gen = this.generators[key].gen;
+        const osc = gen.start(time, destination);
+
+        if (osc) {
+          // the stop time should really be controlled by
+          // the generator's own envelope choice
+          osc.stop(this.ctx.currentTime + 0.5);
         }
       }
     }
+  }
 }
 
 // export class OneShot extends Instrument {

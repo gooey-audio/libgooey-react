@@ -14,6 +14,13 @@ export default function ReactTestPage() {
     hat: [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1],
   });
 
+  const [volumes, setVolumes] = useState({
+    master: 1,
+    kick: 1,
+    snare: 1,
+    hat: 1,
+  });
+
   const { audioContext, isLoaded, isLoading, error, initialize, stage } =
     useLibGooey({
       autoInit: false, // Manual initialization for demo
@@ -61,6 +68,18 @@ export default function ReactTestPage() {
 
       return newPatterns;
     });
+  };
+
+  const handleVolumeChange = (target: string, value: number) => {
+    setVolumes((prev) => ({ ...prev, [target]: value }));
+    
+    if (stage) {
+      if (target === 'master') {
+        stage.setMainVolume(value);
+      } else {
+        stage.setInstrumentVolume(target, value);
+      }
+    }
   };
 
   const triggerKick = () => {
@@ -269,6 +288,51 @@ export default function ReactTestPage() {
                     </svg>
                   );
                 })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="my-6">
+        <h3 className="text-lg font-semibold mb-3">Volume Controls</h3>
+        <div className="space-y-3">
+          {/* Master Volume */}
+          <div className="flex items-center gap-4">
+            <div className="w-16 text-sm font-medium text-gray-700">
+              Master
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="2"
+              step="0.01"
+              value={volumes.master}
+              onChange={(e) => handleVolumeChange('master', parseFloat(e.target.value))}
+              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+            />
+            <div className="w-12 text-sm text-gray-600">
+              {(volumes.master * 100).toFixed(0)}%
+            </div>
+          </div>
+
+          {/* Instrument Volumes */}
+          {instruments.map((instrument) => (
+            <div key={instrument} className="flex items-center gap-4">
+              <div className="w-16 text-sm font-medium text-gray-700 capitalize">
+                {instrument}
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="2"
+                step="0.01"
+                value={volumes[instrument as keyof typeof volumes]}
+                onChange={(e) => handleVolumeChange(instrument, parseFloat(e.target.value))}
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              />
+              <div className="w-12 text-sm text-gray-600">
+                {(volumes[instrument as keyof typeof volumes] * 100).toFixed(0)}%
               </div>
             </div>
           ))}
