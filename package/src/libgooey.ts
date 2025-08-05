@@ -59,9 +59,6 @@ export function useLibGooey(
     audioContextRef.current = ctx;
     stageRef.current = new Stage(ctx);
 
-    // Connect the stage to the audio destination
-    stageRef.current.connect();
-
     console.log("context", ctx);
 
     try {

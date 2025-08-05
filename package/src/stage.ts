@@ -13,11 +13,15 @@ export class Stage {
   private mainOut: GainNode;
   private instruments: Record<string, InstrumentChannel>;
 
-  constructor(audioContext: AudioContext) {
+  constructor(audioContext: AudioContext, destination?: AudioNode) {
     this.ctx = audioContext;
     this.instruments = {};
     this.mainOut = this.ctx.createGain();
     this.mainOut.gain.setValueAtTime(1, this.ctx.currentTime);
+
+    // Auto-connect to destination (default: audio context destination)
+    const target = destination || this.ctx.destination;
+    this.mainOut.connect(target);
   }
 
   addInstrument(name: string, instrument: Instrument) {
