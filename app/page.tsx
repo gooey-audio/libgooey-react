@@ -183,10 +183,32 @@ export default function ReactTestPage() {
         ✅ Audio engine loaded successfully!
       </p>
 
-      <button onClick={triggerKick}>Kick</button>
-      <button onClick={triggerSnare}>Snare</button>
-      <button onClick={startSequencer}>Start Sequencer</button>
-      <button onClick={stopSequencer}>Stop Sequencer</button>
+      <div className="flex gap-4 mb-6">
+        <button 
+          onClick={triggerKick}
+          className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
+        >
+          Kick
+        </button>
+        <button 
+          onClick={triggerSnare}
+          className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
+        >
+          Snare
+        </button>
+        <button 
+          onClick={startSequencer}
+          className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
+        >
+          Start Sequencer
+        </button>
+        <button 
+          onClick={stopSequencer}
+          className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
+        >
+          Stop Sequencer
+        </button>
+      </div>
 
       <div className="my-6">
         <h3 className="text-lg font-semibold mb-3">Sequencer Pattern</h3>
