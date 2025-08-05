@@ -63,6 +63,21 @@ export default function ReactTestPage() {
     });
   };
 
+  const handleRandomizePattern = (instrumentName: string) => {
+    setPatterns((prev) => {
+      const newPatterns = { ...prev };
+      const randomPattern = Array.from({ length: 16 }, () => Math.random() > 0.5 ? 1 : 0);
+      newPatterns[instrumentName as keyof typeof prev] = randomPattern;
+
+      // Update the sequencer pattern if it's running
+      if (sequencerRef.current) {
+        sequencerRef.current.setPattern(instrumentName, randomPattern);
+      }
+
+      return newPatterns;
+    });
+  };
+
   const triggerKick = () => {
     const ctx = audioContext;
     if (ctx && stage) {
@@ -203,6 +218,13 @@ export default function ReactTestPage() {
                   title="Clear pattern"
                 >
                   Clear
+                </button>
+                <button
+                  onClick={() => handleRandomizePattern(instrument)}
+                  className="px-2 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
+                  title="Randomize pattern"
+                >
+                  Random
                 </button>
                 {Array.from({ length: 16 }).map((_, i) => {
                   const isActive =
