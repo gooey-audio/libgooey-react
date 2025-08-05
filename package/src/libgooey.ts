@@ -32,7 +32,7 @@ export interface UseLibGooeyReturn {
 }
 
 export function useLibGooey(
-  options: UseLibGooeyOptions = {}
+  options: UseLibGooeyOptions = {},
 ): UseLibGooeyReturn {
   const { sampleRate = 44100, autoInit = true } = options;
 
@@ -58,6 +58,9 @@ export function useLibGooey(
 
     audioContextRef.current = ctx;
     stageRef.current = new Stage(ctx);
+
+    // Connect the stage to the audio destination
+    stageRef.current.connect();
 
     console.log("context", ctx);
 

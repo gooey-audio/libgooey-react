@@ -10,7 +10,7 @@ export class Noise {
     this.ctx = ctx;
   }
 
-  makeBufferSource() {
+  makeBufferSource(destination?: AudioNode) {
     const bufferSize = this.ctx.sampleRate * 0.2; // 0.2 seconds
     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const data = buffer.getChannelData(0);
@@ -27,9 +27,9 @@ export class Noise {
 
     bufferSource.connect(gain);
 
-    // TODO
-    // connect to master gain
-    gain.connect(this.ctx.destination);
+    // Connect to the provided destination or default to audio context destination
+    const target = destination || this.ctx.destination;
+    gain.connect(target);
 
     return { bufferSource, gain };
   }
@@ -42,8 +42,8 @@ export class Noise {
     this.envelope = new Envelope(this.ctx, config);
   }
 
-  start(time: number) {
-    const { bufferSource, gain } = this.makeBufferSource();
+  start(time: number, destination?: AudioNode) {
+    const { bufferSource, gain } = this.makeBufferSource(destination);
     bufferSource.start(time);
 
     // Apply envelope if one is set
