@@ -75,14 +75,31 @@ export default function ReactTestPage() {
 
   const handleVolumeChange = (target: string, value: number) => {
     setVolumes((prev) => ({ ...prev, [target]: value }));
-    
+
     if (stage) {
-      if (target === 'master') {
+      if (target === "master") {
         stage.setMainVolume(value);
       } else {
         stage.setInstrumentVolume(target, value);
       }
     }
+  };
+
+  const handleRandomizePattern = (instrumentName: string) => {
+    setPatterns((prev) => {
+      const newPatterns = { ...prev };
+      const randomPattern = Array.from({ length: 16 }, () =>
+        Math.random() > 0.5 ? 1 : 0
+      );
+      newPatterns[instrumentName as keyof typeof prev] = randomPattern;
+
+      // Update the sequencer pattern if it's running
+      if (sequencerRef.current) {
+        sequencerRef.current.setPattern(instrumentName, randomPattern);
+      }
+
+      return newPatterns;
+    });
   };
 
   const triggerKick = () => {
@@ -226,31 +243,31 @@ export default function ReactTestPage() {
       </p>
 
       <div className="flex gap-4 mb-6">
-        <button 
+        <button
           onClick={triggerKick}
           className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
         >
           Kick
         </button>
-        <button 
+        <button
           onClick={triggerSnare}
           className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
         >
           Snare
         </button>
-        <button 
+        <button
           onClick={triggerPinkHat}
           className="px-6 py-3 bg-pink-500/20 border border-pink-300/20 rounded-xl text-white font-medium hover:bg-pink-500/40 hover:border-pink-300/40 transition-all duration-200 backdrop-blur-sm"
         >
           Pink Hat
         </button>
-        <button 
+        <button
           onClick={startSequencer}
           className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
         >
           Start Sequencer
         </button>
-        <button 
+        <button
           onClick={stopSequencer}
           className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
         >
@@ -273,6 +290,13 @@ export default function ReactTestPage() {
                   title="Clear pattern"
                 >
                   Clear
+                </button>
+                <button
+                  onClick={() => handleRandomizePattern(instrument)}
+                  className="px-2 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
+                  title="Randomize pattern"
+                >
+                  Random
                 </button>
                 {Array.from({ length: 16 }).map((_, i) => {
                   const isActive =
@@ -328,16 +352,16 @@ export default function ReactTestPage() {
         <div className="space-y-3">
           {/* Master Volume */}
           <div className="flex items-center gap-4">
-            <div className="w-16 text-sm font-medium text-gray-700">
-              Master
-            </div>
+            <div className="w-16 text-sm font-medium text-gray-700">Master</div>
             <input
               type="range"
               min="0"
               max="2"
               step="0.01"
               value={volumes.master}
-              onChange={(e) => handleVolumeChange('master', parseFloat(e.target.value))}
+              onChange={(e) =>
+                handleVolumeChange("master", parseFloat(e.target.value))
+              }
               className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
             />
             <div className="w-12 text-sm text-gray-600">
@@ -357,11 +381,14 @@ export default function ReactTestPage() {
                 max="2"
                 step="0.01"
                 value={volumes[instrument as keyof typeof volumes]}
-                onChange={(e) => handleVolumeChange(instrument, parseFloat(e.target.value))}
+                onChange={(e) =>
+                  handleVolumeChange(instrument, parseFloat(e.target.value))
+                }
                 className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               />
               <div className="w-12 text-sm text-gray-600">
-                {(volumes[instrument as keyof typeof volumes] * 100).toFixed(0)}%
+                {(volumes[instrument as keyof typeof volumes] * 100).toFixed(0)}
+                %
               </div>
             </div>
           ))}
