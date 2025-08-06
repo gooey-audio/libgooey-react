@@ -4,6 +4,7 @@ import React, { useRef, useState } from "react";
 import { useLibGooey } from "@/package/src/libgooey";
 import { makeKick } from "@/package/src/kick";
 import { makeSnare } from "@/package/src/snare";
+import { makePinkHat } from "@/package/src/pink-hat";
 import { Sequencer } from "@/package/src/sequencer";
 import { useBeatTracker } from "@/package/src/hooks";
 import { FilterConfig } from "@/package/src/filter";
@@ -13,6 +14,7 @@ export default function ReactTestPage() {
     kick: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
     snare: [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
     hat: [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1],
+    pinkHat: [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
   });
 
   const [volumes, setVolumes] = useState({
@@ -20,6 +22,7 @@ export default function ReactTestPage() {
     kick: 1,
     snare: 1,
     hat: 1,
+    pinkHat: 1,
   });
 
   const [filterSettings, setFilterSettings] = useState({
@@ -94,9 +97,9 @@ export default function ReactTestPage() {
 
   const handleVolumeChange = (target: string, value: number) => {
     setVolumes((prev) => ({ ...prev, [target]: value }));
-    
+
     if (stage) {
-      if (target === 'master') {
+      if (target === "master") {
         stage.setMainVolume(value);
       } else {
         stage.setInstrumentVolume(target, value);
@@ -198,6 +201,23 @@ export default function ReactTestPage() {
     }
   };
 
+  const triggerPinkHat = () => {
+    const ctx = audioContext;
+    if (ctx && stage) {
+      // TODO
+      // shouldn't make this on every click
+      const pinkHat1 = makePinkHat(ctx, { decay_time: 0.12 });
+
+      stage.addInstrument("pinkHat", pinkHat1);
+
+      // TODO
+      // allow trigger of n names
+      stage.trigger("pinkHat");
+
+      console.log("Pink Hat triggered!");
+    }
+  };
+
   const startSequencer = () => {
     const ctx = audioContext;
 
@@ -222,6 +242,9 @@ export default function ReactTestPage() {
         filter: hatFilter 
       });
       stage.addInstrument("hat", hat);
+
+      const pinkHat = makePinkHat(ctx, { decay_time: 0.1 });
+      stage.addInstrument("pinkHat", pinkHat);
 
       const sequencer = new Sequencer(ctx, {
         tempo: 120,
@@ -293,25 +316,31 @@ export default function ReactTestPage() {
       </p>
 
       <div className="flex gap-4 mb-6">
-        <button 
+        <button
           onClick={triggerKick}
           className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
         >
           Kick
         </button>
-        <button 
+        <button
           onClick={triggerSnare}
           className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
         >
           Snare
         </button>
-        <button 
+        <button
+          onClick={triggerPinkHat}
+          className="px-6 py-3 bg-pink-500/20 border border-pink-300/20 rounded-xl text-white font-medium hover:bg-pink-500/40 hover:border-pink-300/40 transition-all duration-200 backdrop-blur-sm"
+        >
+          Pink Hat
+        </button>
+        <button
           onClick={startSequencer}
           className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
         >
           Start Sequencer
         </button>
-        <button 
+        <button
           onClick={stopSequencer}
           className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
         >
@@ -334,6 +363,13 @@ export default function ReactTestPage() {
                   title="Clear pattern"
                 >
                   Clear
+                </button>
+                <button
+                  onClick={() => handleRandomizePattern(instrument)}
+                  className="px-2 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
+                  title="Randomize pattern"
+                >
+                  Random
                 </button>
                 {Array.from({ length: 16 }).map((_, i) => {
                   const isActive =
@@ -389,16 +425,16 @@ export default function ReactTestPage() {
         <div className="space-y-3">
           {/* Master Volume */}
           <div className="flex items-center gap-4">
-            <div className="w-16 text-sm font-medium text-gray-700">
-              Master
-            </div>
+            <div className="w-16 text-sm font-medium text-gray-700">Master</div>
             <input
               type="range"
               min="0"
               max="2"
               step="0.01"
               value={volumes.master}
-              onChange={(e) => handleVolumeChange('master', parseFloat(e.target.value))}
+              onChange={(e) =>
+                handleVolumeChange("master", parseFloat(e.target.value))
+              }
               className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
             />
             <div className="w-12 text-sm text-gray-600">
@@ -418,11 +454,14 @@ export default function ReactTestPage() {
                 max="2"
                 step="0.01"
                 value={volumes[instrument as keyof typeof volumes]}
-                onChange={(e) => handleVolumeChange(instrument, parseFloat(e.target.value))}
+                onChange={(e) =>
+                  handleVolumeChange(instrument, parseFloat(e.target.value))
+                }
                 className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               />
               <div className="w-12 text-sm text-gray-600">
-                {(volumes[instrument as keyof typeof volumes] * 100).toFixed(0)}%
+                {(volumes[instrument as keyof typeof volumes] * 100).toFixed(0)}
+                %
               </div>
             </div>
           ))}

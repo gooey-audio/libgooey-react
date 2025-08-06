@@ -1,6 +1,6 @@
 import { Instrument } from "./instrument";
 import { Oscillator, OscType } from "./oscillator";
-import { Noise } from "./noise";
+import { Noise } from "./generators";
 import { Envelope } from "./envelope";
 import { FilterConfig } from "./filter";
 

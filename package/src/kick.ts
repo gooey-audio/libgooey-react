@@ -1,6 +1,6 @@
 import { Instrument } from "./instrument";
 import { Oscillator } from "./oscillator";
-import { Noise } from "./noise";
+import { Noise } from "./generators";
 import { FilterConfig } from "./filter";
 
 export interface KickConfig {
@@ -12,7 +12,7 @@ export const makeKick = (
   ctx: AudioContext,
   freq1: number,
   freq2: number,
-  config?: KickConfig,
+  config?: KickConfig
 ) => {
   const inst = new Instrument(ctx);
 

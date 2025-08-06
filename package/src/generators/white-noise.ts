@@ -1,10 +1,8 @@
-import { Envelope, ADSRConfig } from "./envelope";
-import { Filter, FilterConfig } from "./filter";
+import { Envelope, ADSRConfig } from "../envelope";
+import { Filter, FilterConfig } from "../filter";
 
-export class Noise {
+export class WhiteNoise {
   private ctx: AudioContext;
-  // private gain: GainNode;
-  // private bufferSource: AudioBufferSourceNode;
   private envelope?: Envelope;
   private filter?: Filter;
 
@@ -44,10 +42,6 @@ export class Noise {
     return { bufferSource, gain };
   }
 
-  // connect(gain: GainNode) {
-  //   this.gain.connect(gain);
-  // }
-
   setADSR(config: ADSRConfig) {
     this.envelope = new Envelope(this.ctx, config);
   }
@@ -73,8 +67,4 @@ export class Noise {
 
     return bufferSource;
   }
-
-  // stop(future: number) {
-  //   this.bufferSource.stop(future);
-  // }
 }
