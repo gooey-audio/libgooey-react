@@ -14,6 +14,13 @@ export default function ReactTestPage() {
     hat: [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1],
   });
 
+  const [volumes, setVolumes] = useState({
+    master: 1,
+    kick: 1,
+    snare: 1,
+    hat: 1,
+  });
+
   const { audioContext, isLoaded, isLoading, error, initialize, stage } =
     useLibGooey({
       autoInit: false, // Manual initialization for demo
@@ -61,6 +68,18 @@ export default function ReactTestPage() {
 
       return newPatterns;
     });
+  };
+
+  const handleVolumeChange = (target: string, value: number) => {
+    setVolumes((prev) => ({ ...prev, [target]: value }));
+    
+    if (stage) {
+      if (target === 'master') {
+        stage.setMainVolume(value);
+      } else {
+        stage.setInstrumentVolume(target, value);
+      }
+    }
   };
 
   const handleRandomizePattern = (instrumentName: string) => {
@@ -198,10 +217,32 @@ export default function ReactTestPage() {
         ✅ Audio engine loaded successfully!
       </p>
 
-      <button onClick={triggerKick}>Kick</button>
-      <button onClick={triggerSnare}>Snare</button>
-      <button onClick={startSequencer}>Start Sequencer</button>
-      <button onClick={stopSequencer}>Stop Sequencer</button>
+      <div className="flex gap-4 mb-6">
+        <button 
+          onClick={triggerKick}
+          className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
+        >
+          Kick
+        </button>
+        <button 
+          onClick={triggerSnare}
+          className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
+        >
+          Snare
+        </button>
+        <button 
+          onClick={startSequencer}
+          className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
+        >
+          Start Sequencer
+        </button>
+        <button 
+          onClick={stopSequencer}
+          className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
+        >
+          Stop Sequencer
+        </button>
+      </div>
 
       <div className="my-6">
         <h3 className="text-lg font-semibold mb-3">Sequencer Pattern</h3>
@@ -269,6 +310,51 @@ export default function ReactTestPage() {
                     </svg>
                   );
                 })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="my-6">
+        <h3 className="text-lg font-semibold mb-3">Volume Controls</h3>
+        <div className="space-y-3">
+          {/* Master Volume */}
+          <div className="flex items-center gap-4">
+            <div className="w-16 text-sm font-medium text-gray-700">
+              Master
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="2"
+              step="0.01"
+              value={volumes.master}
+              onChange={(e) => handleVolumeChange('master', parseFloat(e.target.value))}
+              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+            />
+            <div className="w-12 text-sm text-gray-600">
+              {(volumes.master * 100).toFixed(0)}%
+            </div>
+          </div>
+
+          {/* Instrument Volumes */}
+          {instruments.map((instrument) => (
+            <div key={instrument} className="flex items-center gap-4">
+              <div className="w-16 text-sm font-medium text-gray-700 capitalize">
+                {instrument}
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="2"
+                step="0.01"
+                value={volumes[instrument as keyof typeof volumes]}
+                onChange={(e) => handleVolumeChange(instrument, parseFloat(e.target.value))}
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              />
+              <div className="w-12 text-sm text-gray-600">
+                {(volumes[instrument as keyof typeof volumes] * 100).toFixed(0)}%
               </div>
             </div>
           ))}
