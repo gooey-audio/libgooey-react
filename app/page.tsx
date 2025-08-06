@@ -44,6 +44,12 @@ export default function ReactTestPage() {
       Q: 1,
       type: "lowpass" as BiquadFilterType,
     },
+    pinkHat: {
+      enabled: false,
+      frequency: 6000,
+      Q: 1,
+      type: "lowpass" as BiquadFilterType,
+    },
   });
 
   const { audioContext, isLoaded, isLoading, error, initialize, stage } =
@@ -516,9 +522,11 @@ export default function ReactTestPage() {
         <h3 className="text-lg font-semibold mb-3">Filter Controls</h3>
         <div className="space-y-4">
           {instruments.map((instrument) => {
+            
             const settings =
               filterSettings[instrument as keyof typeof filterSettings];
-            return (
+            
+              return (
               <div
                 key={instrument}
                 className="p-4 border border-gray-300 rounded-lg bg-gray-50"
