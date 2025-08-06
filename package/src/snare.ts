@@ -1,6 +1,6 @@
 import { Instrument } from "./instrument";
 import { Oscillator, OscType } from "./oscillator";
-import { Noise } from "./noise";
+import { Noise } from "./generators";
 import { Envelope } from "./envelope";
 
 export interface SnareConfig {
@@ -11,7 +11,7 @@ export const makeSnare = (
   ctx: AudioContext,
   freq1: number,
   freq2: number,
-  config: SnareConfig = { decay_time: 0.3 }
+  config: SnareConfig = { decay_time: 0.3 },
 ) => {
   const inst = new Instrument(ctx);
 
