@@ -1,6 +1,6 @@
 // Core audio classes
 export { Oscillator, OscType } from "./oscillator";
-export { Noise } from "./noise";
+export { Noise } from "./generators";
 export { Envelope, type ADSRConfig } from "./envelope";
 export { Filter, type FilterConfig } from "./filter";
 
