@@ -4,6 +4,7 @@ import React, { useRef, useState } from "react";
 import { useLibGooey } from "@/package/src/libgooey";
 import { makeKick } from "@/package/src/kick";
 import { makeSnare } from "@/package/src/snare";
+import { makePinkHat } from "@/package/src/pink-hat";
 import { Sequencer } from "@/package/src/sequencer";
 import { useBeatTracker } from "@/package/src/hooks";
 
@@ -12,6 +13,7 @@ export default function ReactTestPage() {
     kick: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
     snare: [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
     hat: [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1],
+    pinkHat: [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
   });
 
   const [volumes, setVolumes] = useState({
@@ -19,6 +21,7 @@ export default function ReactTestPage() {
     kick: 1,
     snare: 1,
     hat: 1,
+    pinkHat: 1,
   });
 
   const { audioContext, isLoaded, isLoading, error, initialize, stage } =
@@ -118,6 +121,23 @@ export default function ReactTestPage() {
     }
   };
 
+  const triggerPinkHat = () => {
+    const ctx = audioContext;
+    if (ctx && stage) {
+      // TODO
+      // shouldn't make this on every click
+      const pinkHat1 = makePinkHat(ctx, { decay_time: 0.12 });
+
+      stage.addInstrument("pinkHat", pinkHat1);
+
+      // TODO
+      // allow trigger of n names
+      stage.trigger("pinkHat");
+
+      console.log("Pink Hat triggered!");
+    }
+  };
+
   const startSequencer = () => {
     const ctx = audioContext;
 
@@ -132,6 +152,9 @@ export default function ReactTestPage() {
 
       const hat = makeSnare(ctx, 200, 800);
       stage.addInstrument("hat", hat);
+
+      const pinkHat = makePinkHat(ctx, { decay_time: 0.1 });
+      stage.addInstrument("pinkHat", pinkHat);
 
       const sequencer = new Sequencer(ctx, {
         tempo: 120,
@@ -214,6 +237,12 @@ export default function ReactTestPage() {
           className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
         >
           Snare
+        </button>
+        <button 
+          onClick={triggerPinkHat}
+          className="px-6 py-3 bg-pink-500/20 border border-pink-300/20 rounded-xl text-white font-medium hover:bg-pink-500/40 hover:border-pink-300/40 transition-all duration-200 backdrop-blur-sm"
+        >
+          Pink Hat
         </button>
         <button 
           onClick={startSequencer}
