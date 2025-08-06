@@ -2,16 +2,19 @@ import { Instrument } from "./instrument";
 import { Oscillator, OscType } from "./oscillator";
 import { Noise } from "./noise";
 import { Envelope } from "./envelope";
+import { FilterConfig } from "./filter";
 
 export interface SnareConfig {
   decay_time: number;
+  filter?: FilterConfig;
+  noiseFilter?: FilterConfig;
 }
 
 export const makeSnare = (
   ctx: AudioContext,
   freq1: number,
   freq2: number,
-  config: SnareConfig = { decay_time: 0.3 }
+  config: SnareConfig = { decay_time: 0.3 },
 ) => {
   const inst = new Instrument(ctx);
 
@@ -43,6 +46,20 @@ export const makeSnare = (
     sustain: 0.0, // Drop to base frequency
     release: config.decay_time * 0.1, // Quick release
   });
+
+  // Add optional filters
+  if (config.filter) {
+    osc1.setFilter(config.filter);
+    osc2.setFilter(config.filter);
+  }
+
+  // Add optional separate filter for noise (different characteristics)
+  if (config.noiseFilter) {
+    noise.setFilter(config.noiseFilter);
+  } else if (config.filter) {
+    // Use the same filter as oscillators if no separate noise filter
+    noise.setFilter(config.filter);
+  }
 
   inst.addGenerator("sub", osc1);
   inst.addGenerator("noise", noise);

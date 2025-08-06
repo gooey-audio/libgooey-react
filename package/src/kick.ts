@@ -1,8 +1,19 @@
 import { Instrument } from "./instrument";
 import { Oscillator } from "./oscillator";
 import { Noise } from "./noise";
+import { FilterConfig } from "./filter";
 
-export const makeKick = (ctx: AudioContext, freq1: number, freq2: number) => {
+export interface KickConfig {
+  filter?: FilterConfig;
+  clickFilter?: FilterConfig;
+}
+
+export const makeKick = (
+  ctx: AudioContext,
+  freq1: number,
+  freq2: number,
+  config?: KickConfig,
+) => {
   const inst = new Instrument(ctx);
 
   const osc1 = new Oscillator(ctx, freq1);
@@ -23,6 +34,12 @@ export const makeKick = (ctx: AudioContext, freq1: number, freq2: number) => {
     release: 0.05, // Quick release
   });
 
+  // Add optional filters to oscillators
+  if (config?.filter) {
+    osc1.setFilter(config.filter);
+    osc2.setFilter(config.filter);
+  }
+
   // Add short "click" sound using noise generator
   const clickNoise = new Noise(ctx);
   clickNoise.setADSR({
@@ -31,6 +48,11 @@ export const makeKick = (ctx: AudioContext, freq1: number, freq2: number) => {
     sustain: 0, // No sustain
     release: 0.005, // Very quick release
   });
+
+  // Add optional filter to click noise (separate config)
+  if (config?.clickFilter) {
+    clickNoise.setFilter(config.clickFilter);
+  }
 
   inst.addGenerator("sub", osc1);
   inst.addGenerator("main", osc2);
