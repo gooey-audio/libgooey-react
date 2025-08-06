@@ -1,8 +1,8 @@
 import { Oscillator } from "./oscillator";
-import { Noise } from "./noise";
+import { Noise, WhiteNoise, PinkNoise } from "./generators";
 
 // Define a type for any generator (Oscillator or Noise)
-export type AudioGenerator = Oscillator | Noise;
+export type AudioGenerator = Oscillator | Noise | WhiteNoise | PinkNoise;
 
 type InstGenerator = {
   gen: AudioGenerator;

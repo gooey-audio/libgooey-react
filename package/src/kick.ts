@@ -1,6 +1,6 @@
 import { Instrument } from "./instrument";
 import { Oscillator } from "./oscillator";
-import { Noise } from "./noise";
+import { Noise } from "./generators";
 
 export const makeKick = (ctx: AudioContext, freq1: number, freq2: number) => {
   const inst = new Instrument(ctx);
