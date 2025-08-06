@@ -32,7 +32,7 @@ export interface UseLibGooeyReturn {
 }
 
 export function useLibGooey(
-  options: UseLibGooeyOptions = {}
+  options: UseLibGooeyOptions = {},
 ): UseLibGooeyReturn {
   const { sampleRate = 44100, autoInit = true } = options;
 

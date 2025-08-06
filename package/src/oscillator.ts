@@ -21,7 +21,7 @@ export class Oscillator {
     // this.gain =
   }
 
-  makeOscillator() {
+  makeOscillator(destination?: AudioNode) {
     const now = this.ctx.currentTime;
     const gain = this.ctx.createGain();
     const osc = this.ctx.createOscillator();
@@ -41,10 +41,9 @@ export class Oscillator {
 
     osc.connect(gain);
 
-    // TODO
-    // this needs to be lifted if we want stage to
-    // have a top level "two bus" style gain
-    gain.connect(this.ctx.destination);
+    // Connect to the provided destination or default to audio context destination
+    const target = destination || this.ctx.destination;
+    gain.connect(target);
 
     return { osc, gain };
   }
@@ -63,8 +62,8 @@ export class Oscillator {
 
   // creating the oscillator node on start, instead of constructor
   // allows us to trigger many instances during sequencer lookahead
-  start(time: number) {
-    const { osc, gain } = this.makeOscillator();
+  start(time: number, destination?: AudioNode) {
+    const { osc, gain } = this.makeOscillator(destination);
     osc.start(time);
 
     // Apply envelope if one is set
