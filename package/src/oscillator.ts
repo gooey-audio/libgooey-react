@@ -1,4 +1,5 @@
 import { Envelope, ADSRConfig } from "./envelope";
+import { Filter, FilterConfig } from "./filter";
 
 export enum OscType {
   Triangle,
@@ -12,6 +13,7 @@ export class Oscillator {
   // private osc: OscillatorNode;
   private envelope?: Envelope;
   private pitchEnvelope?: Envelope;
+  private filter?: Filter;
   private baseFrequency: number;
 
   constructor(ctx: AudioContext, freq: number, type: OscType = OscType.Sine) {
@@ -21,8 +23,8 @@ export class Oscillator {
     // this.gain =
   }
 
-  makeOscillator(destination?: AudioNode) {
-    const now = this.ctx.currentTime;
+  makeOscillator(destination?: AudioNode, startTime?: number) {
+    const now = startTime || this.ctx.currentTime;
     const gain = this.ctx.createGain();
     const osc = this.ctx.createOscillator();
 
@@ -39,11 +41,18 @@ export class Oscillator {
     osc.frequency.setValueAtTime(this.baseFrequency, now);
     gain.gain.setValueAtTime(0, now); // Start from silence, envelope will control volume
 
-    osc.connect(gain);
-
-    // Connect to the provided destination or default to audio context destination
+    // Set up signal chain: osc -> [filter] -> gain -> destination
     const target = destination || this.ctx.destination;
-    gain.connect(target);
+
+    if (this.filter) {
+      // Signal chain: osc -> filter -> gain -> destination
+      this.filter.apply(osc, gain, now);
+      gain.connect(target);
+    } else {
+      // Standard chain: osc -> gain -> destination
+      osc.connect(gain);
+      gain.connect(target);
+    }
 
     return { osc, gain };
   }
@@ -60,10 +69,24 @@ export class Oscillator {
     this.pitchEnvelope = new Envelope(this.ctx, config);
   }
 
+  setFilter(config: FilterConfig | undefined) {
+    this.filter = config ? new Filter(this.ctx, config) : undefined;
+  }
+
+  removeFilter() {
+    this.filter = undefined;
+  }
+
+  setFilterADSR(config: ADSRConfig, frequencyRange: number = 1.0) {
+    if (this.filter) {
+      this.filter.setFrequencyADSR(config, frequencyRange);
+    }
+  }
+
   // creating the oscillator node on start, instead of constructor
   // allows us to trigger many instances during sequencer lookahead
   start(time: number, destination?: AudioNode) {
-    const { osc, gain } = this.makeOscillator(destination);
+    const { osc, gain } = this.makeOscillator(destination, time);
     osc.start(time);
 
     // Apply envelope if one is set
