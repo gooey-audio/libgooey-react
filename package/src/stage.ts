@@ -1,4 +1,5 @@
 import { Instrument } from "@/package/src/instrument";
+import { FilterConfig } from "@/package/src/filter";
 
 type InstrumentChannel = {
   instrument: Instrument;
@@ -28,7 +29,7 @@ export class Stage {
     // TODO: enforce name is not already taken
     if (this.instruments[name]) {
       console.warn(
-        `Instrument "${name}" already exists. Replacing existing instrument.`,
+        `Instrument "${name}" already exists. Replacing existing instrument.`
       );
     }
 
@@ -70,9 +71,60 @@ export class Stage {
     if (this.instruments[name]) {
       this.instruments[name].gain.gain.setValueAtTime(
         amt,
-        this.ctx.currentTime,
+        this.ctx.currentTime
       );
     }
+  }
+
+  // Set filter configuration for a specific instrument
+  setInstrumentFilter(name: string, filterConfig: FilterConfig | undefined) {
+    const instChannel = this.instruments[name];
+    if (!instChannel) {
+      console.warn(`Instrument "${name}" not found.`);
+      return;
+    }
+
+    const instrument = instChannel.instrument;
+
+    // Apply filter to all generators in the instrument
+    for (const generatorName in instrument.generators) {
+      const generator = instrument.generators[generatorName].gen;
+
+      if (filterConfig) {
+        generator.setFilter(filterConfig);
+      } else {
+        // Remove filter using the dedicated method
+        generator.removeFilter();
+      }
+    }
+  }
+
+  // Remove filter from a specific instrument
+  removeInstrumentFilter(name: string) {
+    const instChannel = this.instruments[name];
+    if (!instChannel) {
+      console.warn(`Instrument "${name}" not found.`);
+      return;
+    }
+
+    const instrument = instChannel.instrument;
+
+    // Remove filter from all generators in the instrument
+    for (const generatorName in instrument.generators) {
+      const generator = instrument.generators[generatorName].gen;
+      generator.removeFilter();
+    }
+  }
+
+  // Get the current instrument if it exists
+  getInstrument(name: string): Instrument | undefined {
+    const instChannel = this.instruments[name];
+    return instChannel ? instChannel.instrument : undefined;
+  }
+
+  // Check if an instrument exists
+  hasInstrument(name: string): boolean {
+    return name in this.instruments;
   }
 
   // Connect the stage's main output to the audio context destination

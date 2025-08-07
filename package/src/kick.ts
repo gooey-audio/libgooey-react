@@ -42,6 +42,7 @@ export const makeKick = (
 
   // Add short "click" sound using noise generator
   const clickNoise = new Noise(ctx);
+
   clickNoise.setADSR({
     attack: 0.001, // Extremely quick attack for sharp click
     decay: 0.01, // Very short decay

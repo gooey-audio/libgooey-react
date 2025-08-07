@@ -46,8 +46,12 @@ export class WhiteNoise {
     this.envelope = new Envelope(this.ctx, config);
   }
 
-  setFilter(config: FilterConfig) {
-    this.filter = new Filter(this.ctx, config);
+  setFilter(config: FilterConfig | undefined) {
+    this.filter = config ? new Filter(this.ctx, config) : undefined;
+  }
+
+  removeFilter() {
+    this.filter = undefined;
   }
 
   setFilterADSR(config: ADSRConfig, frequencyRange: number = 1.0) {

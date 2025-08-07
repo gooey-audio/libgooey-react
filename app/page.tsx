@@ -45,10 +45,10 @@ export default function ReactTestPage() {
       type: "lowpass" as BiquadFilterType,
     },
     pinkHat: {
-      enabled: false,
-      frequency: 6000,
+      enabled: true,
+      frequency: 5000,
       Q: 1,
-      type: "lowpass" as BiquadFilterType,
+      type: "highpass" as BiquadFilterType,
     },
   });
 
@@ -140,66 +140,31 @@ export default function ReactTestPage() {
       },
     }));
 
-    // Recreate instrument with new filter settings if sequencer is running
-    if (sequencerRef.current && audioContext && stage) {
-      recreateInstrument(instrumentName);
-    }
-  };
-
-  const recreateInstrument = (instrumentName: string) => {
-    if (!audioContext || !stage) return;
-
-    const filterConfig = createFilterConfig(instrumentName);
-
-    switch (instrumentName) {
-      case "kick":
-        const kick = makeKick(
-          audioContext,
-          50,
-          300,
-          filterConfig ? { filter: filterConfig } : undefined
-        );
-        stage.addInstrument("kick", kick);
-        break;
-      case "snare":
-        const snare = makeSnare(audioContext, 400, 800, {
-          decay_time: 0.3,
-          filter: filterConfig,
-        });
-        stage.addInstrument("snare", snare);
-        break;
-      case "hat":
-        const hat = makeSnare(audioContext, 200, 800, {
-          decay_time: 0.1,
-          filter: filterConfig,
-        });
-        stage.addInstrument("hat", hat);
-        break;
+    // Update instrument filter settings if sequencer is running
+    if (sequencerRef.current && stage) {
+      const filterConfig = createFilterConfig(instrumentName);
+      stage.setInstrumentFilter(instrumentName, filterConfig);
     }
   };
 
   const triggerKick = () => {
     const ctx = audioContext;
     if (ctx && stage) {
-      // TODO
-      // shouldn't make this on every click
+      // Create instruments if they don't exist
+      if (!stage.hasInstrument("kick")) {
+        const kick1 = makeKick(ctx, 200, 800);
+        stage.addInstrument("kick", kick1);
+      }
+
+      if (!stage.hasInstrument("kick2")) {
+        const kick2 = makeKick(ctx, 1500, 2000);
+        stage.addInstrument("kick2", kick2);
+      }
+
+      // Apply current filter settings
       const filterConfig = createFilterConfig("kick");
-      const kick1 = makeKick(
-        ctx,
-        200,
-        800,
-        filterConfig ? { filter: filterConfig } : undefined
-      );
-
-      const kick2 = makeKick(
-        ctx,
-        1500,
-        2000,
-        filterConfig ? { filter: filterConfig } : undefined
-      );
-
-      stage.addInstrument("kick", kick1);
-      stage.addInstrument("kick2", kick2);
+      stage.setInstrumentFilter("kick", filterConfig);
+      stage.setInstrumentFilter("kick2", filterConfig);
 
       // TODO
       // allow trigger of n names
@@ -213,15 +178,17 @@ export default function ReactTestPage() {
   const triggerSnare = () => {
     const ctx = audioContext;
     if (ctx && stage) {
-      // TODO
-      // shouldn't make this on every click
-      const filterConfig = createFilterConfig("snare");
-      const snare1 = makeSnare(ctx, 200, 800, {
-        decay_time: 0.3,
-        filter: filterConfig,
-      });
+      // Create instrument if it doesn't exist
+      if (!stage.hasInstrument("snare")) {
+        const snare1 = makeSnare(ctx, 200, 800, {
+          decay_time: 0.3,
+        });
+        stage.addInstrument("snare", snare1);
+      }
 
-      stage.addInstrument("snare", snare1);
+      // Apply current filter settings
+      const filterConfig = createFilterConfig("snare");
+      stage.setInstrumentFilter("snare", filterConfig);
 
       // TODO
       // allow trigger of n names
@@ -232,11 +199,11 @@ export default function ReactTestPage() {
   const triggerPinkHat = () => {
     const ctx = audioContext;
     if (ctx && stage) {
-      // TODO
-      // shouldn't make this on every click
-      const pinkHat1 = makePinkHat(ctx, { decay_time: 0.12 });
-
-      stage.addInstrument("pinkHat", pinkHat1);
+      // Create instrument if it doesn't exist
+      if (!stage.hasInstrument("pinkHat")) {
+        const pinkHat1 = makePinkHat(ctx, { decay_time: 0.12 });
+        stage.addInstrument("pinkHat", pinkHat1);
+      }
 
       // TODO
       // allow trigger of n names
@@ -252,32 +219,31 @@ export default function ReactTestPage() {
     if (ctx && stage && !sequencerRef.current) {
       const startTime = ctx.currentTime;
 
-      // Create instruments with filter configs
-      const kickFilter = createFilterConfig("kick");
-      const kick = makeKick(
-        ctx,
-        50,
-        300,
-        kickFilter ? { filter: kickFilter } : undefined
-      );
+      // Create instruments without filter configs initially
+      const kick = makeKick(ctx, 50, 300);
       stage.addInstrument("kick", kick);
 
-      const snareFilter = createFilterConfig("snare");
       const snare = makeSnare(ctx, 400, 800, {
         decay_time: 0.3,
-        filter: snareFilter,
       });
       stage.addInstrument("snare", snare);
 
-      const hatFilter = createFilterConfig("hat");
       const hat = makeSnare(ctx, 200, 800, {
         decay_time: 0.1,
-        filter: hatFilter,
       });
       stage.addInstrument("hat", hat);
 
       const pinkHat = makePinkHat(ctx, { decay_time: 0.1 });
       stage.addInstrument("pinkHat", pinkHat);
+
+      // Apply current filter settings
+      const kickFilter = createFilterConfig("kick");
+      const snareFilter = createFilterConfig("snare");
+      const hatFilter = createFilterConfig("hat");
+
+      stage.setInstrumentFilter("kick", kickFilter);
+      stage.setInstrumentFilter("snare", snareFilter);
+      stage.setInstrumentFilter("hat", hatFilter);
 
       const sequencer = new Sequencer(ctx, {
         tempo: 120,
@@ -292,9 +258,6 @@ export default function ReactTestPage() {
 
       // Start beat tracking
       startBeatTracking();
-
-      // Start the sequencer when desired, e.g., on user action.
-      startSequencer();
     }
   };
 
@@ -522,11 +485,10 @@ export default function ReactTestPage() {
         <h3 className="text-lg font-semibold mb-3">Filter Controls</h3>
         <div className="space-y-4">
           {instruments.map((instrument) => {
-            
             const settings =
               filterSettings[instrument as keyof typeof filterSettings];
-            
-              return (
+
+            return (
               <div
                 key={instrument}
                 className="p-4 border border-gray-300 rounded-lg bg-gray-50"
