@@ -1,5 +1,6 @@
 import { Envelope, ADSRConfig } from "./envelope";
 import { Filter, FilterConfig } from "./filter";
+import { Overdrive, OverdriveConfig } from "./effects";
 
 export enum OscType {
   Triangle,
@@ -14,6 +15,7 @@ export class Oscillator {
   private envelope?: Envelope;
   private pitchEnvelope?: Envelope;
   private filter?: Filter;
+  private overdrive?: Overdrive;
   private baseFrequency: number;
 
   constructor(ctx: AudioContext, freq: number, type: OscType = OscType.Sine) {
@@ -41,18 +43,36 @@ export class Oscillator {
     osc.frequency.setValueAtTime(this.baseFrequency, now);
     gain.gain.setValueAtTime(0, now); // Start from silence, envelope will control volume
 
-    // Set up signal chain: osc -> [filter] -> gain -> destination
+    // Set up signal chain: osc -> [filter] -> [overdrive] -> gain -> destination
     const target = destination || this.ctx.destination;
+    let currentNode: AudioNode = osc;
 
+    // Apply filter if present
     if (this.filter) {
-      // Signal chain: osc -> filter -> gain -> destination
-      this.filter.apply(osc, gain, now);
-      gain.connect(target);
+      this.filter.apply(currentNode, gain, now);
+      currentNode = gain;
     } else {
-      // Standard chain: osc -> gain -> destination
-      osc.connect(gain);
-      gain.connect(target);
+      currentNode.connect(gain);
+      currentNode = gain;
     }
+
+    // Apply overdrive if present (after filter, before final gain)
+    if (this.overdrive) {
+      const overdriveNode = this.overdrive.getNode();
+      if (this.filter) {
+        // If we have a filter, reconnect: osc -> filter -> overdrive -> gain -> destination
+        gain.disconnect();
+        this.filter.apply(osc, overdriveNode, now);
+        overdriveNode.connect(gain);
+      } else {
+        // No filter: osc -> overdrive -> gain -> destination
+        gain.disconnect();
+        osc.connect(overdriveNode);
+        overdriveNode.connect(gain);
+      }
+    }
+
+    gain.connect(target);
 
     return { osc, gain };
   }
@@ -81,6 +101,14 @@ export class Oscillator {
     if (this.filter) {
       this.filter.setFrequencyADSR(config, frequencyRange);
     }
+  }
+
+  setOverdrive(config: OverdriveConfig | undefined) {
+    this.overdrive = config ? new Overdrive(this.ctx, config) : undefined;
+  }
+
+  removeOverdrive() {
+    this.overdrive = undefined;
   }
 
   // creating the oscillator node on start, instead of constructor

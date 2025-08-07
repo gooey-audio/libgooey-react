@@ -1,5 +1,6 @@
 import { Oscillator } from "./oscillator";
 import { Noise, WhiteNoise, PinkNoise } from "./generators";
+import { OverdriveConfig } from "./effects";
 
 // Define a type for any generator (Oscillator or Noise)
 export type AudioGenerator = Oscillator | Noise | WhiteNoise | PinkNoise;
@@ -54,6 +55,22 @@ export class Instrument {
         }
       }
     }
+  }
+
+  // Apply overdrive effect to all oscillators in this instrument
+  setOverdrive(config: OverdriveConfig | undefined) {
+    for (const key in this.generators) {
+      if (this.generators.hasOwnProperty(key)) {
+        const gen = this.generators[key].gen;
+        if (gen instanceof Oscillator) {
+          gen.setOverdrive(config);
+        }
+      }
+    }
+  }
+
+  removeOverdrive() {
+    this.setOverdrive(undefined);
   }
 }
 
