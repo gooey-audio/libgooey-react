@@ -2,17 +2,19 @@ import { Instrument } from "./instrument";
 import { Oscillator } from "./oscillator";
 import { Noise } from "./generators";
 import { FilterConfig } from "./filter";
+import { OverdriveConfig } from "./effects";
 
 export interface KickConfig {
   filter?: FilterConfig;
   clickFilter?: FilterConfig;
+  overdrive?: OverdriveConfig;
 }
 
 export const makeKick = (
   ctx: AudioContext,
   freq1: number,
   freq2: number,
-  config?: KickConfig
+  config?: KickConfig,
 ) => {
   const inst = new Instrument(ctx);
 
@@ -38,6 +40,12 @@ export const makeKick = (
   if (config?.filter) {
     osc1.setFilter(config.filter);
     osc2.setFilter(config.filter);
+  }
+
+  // Add optional overdrive to oscillators
+  if (config?.overdrive) {
+    osc1.setOverdrive(config.overdrive);
+    osc2.setOverdrive(config.overdrive);
   }
 
   // Add short "click" sound using noise generator

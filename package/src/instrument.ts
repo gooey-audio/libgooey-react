@@ -58,7 +58,7 @@ export class Instrument {
   }
 
   // Apply overdrive effect to all oscillators in this instrument
-  setOverdrive(config: OverdriveConfig | undefined) {
+  setOverdrive(config: OverdriveConfig) {
     for (const key in this.generators) {
       if (this.generators.hasOwnProperty(key)) {
         const gen = this.generators[key].gen;
@@ -70,7 +70,14 @@ export class Instrument {
   }
 
   removeOverdrive() {
-    this.setOverdrive(undefined);
+    for (const key in this.generators) {
+      if (this.generators.hasOwnProperty(key)) {
+        const gen = this.generators[key].gen;
+        if (gen instanceof Oscillator) {
+          gen.removeOverdrive();
+        }
+      }
+    }
   }
 }
 

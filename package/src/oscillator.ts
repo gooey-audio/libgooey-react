@@ -103,8 +103,8 @@ export class Oscillator {
     }
   }
 
-  setOverdrive(config: OverdriveConfig | undefined) {
-    this.overdrive = config ? new Overdrive(this.ctx, config) : undefined;
+  setOverdrive(config: OverdriveConfig) {
+    this.overdrive = new Overdrive(this.ctx, config);
   }
 
   removeOverdrive() {
