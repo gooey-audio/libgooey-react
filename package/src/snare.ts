@@ -5,14 +5,16 @@ import { Envelope } from "./envelope";
 import { FilterConfig } from "./filter";
 import { OverdriveEffect } from "../../src/audio/effects/OverdriveEffect";
 import { ConvolverReverbEffect } from "../../src/audio/effects/ReverbEffect";
+import type { OverdriveParams } from "../../src/audio/effects/OverdriveEffect";
+import type { ReverbParams } from "../../src/audio/effects/ReverbEffect";
 
 export interface SnareConfig {
   decay_time: number;
   filter?: FilterConfig;
   noiseFilter?: FilterConfig;
   effects?: {
-    overdrive?: Partial<import("../../src/audio/effects/OverdriveEffect").OverdriveParams> & { enabled?: boolean };
-    reverb?: Partial<import("../../src/audio/effects/ReverbEffect").ReverbParams> & { enabled?: boolean };
+    overdrive?: Partial<OverdriveParams> & { enabled?: boolean };
+    reverb?: Partial<ReverbParams> & { enabled?: boolean };
   };
 }
 
