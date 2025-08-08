@@ -2,19 +2,23 @@ import { Instrument } from "./instrument";
 import { Oscillator } from "./oscillator";
 import { Noise } from "./generators";
 import { FilterConfig } from "./filter";
-import { OverdriveConfig } from "./effects";
+import { OverdriveEffect } from "../../src/audio/effects/OverdriveEffect";
+import { ConvolverReverbEffect } from "../../src/audio/effects/ReverbEffect";
 
 export interface KickConfig {
   filter?: FilterConfig;
   clickFilter?: FilterConfig;
-  overdrive?: OverdriveConfig;
+  effects?: {
+    overdrive?: Partial<import("../../src/audio/effects/OverdriveEffect").OverdriveParams> & { enabled?: boolean };
+    reverb?: Partial<import("../../src/audio/effects/ReverbEffect").ReverbParams> & { enabled?: boolean };
+  };
 }
 
 export const makeKick = (
   ctx: AudioContext,
   freq1: number,
   freq2: number,
-  config?: KickConfig,
+  config?: KickConfig
 ) => {
   const inst = new Instrument(ctx);
 
@@ -42,12 +46,6 @@ export const makeKick = (
     osc2.setFilter(config.filter);
   }
 
-  // Add optional overdrive to oscillators
-  if (config?.overdrive) {
-    osc1.setOverdrive(config.overdrive);
-    osc2.setOverdrive(config.overdrive);
-  }
-
   // Add short "click" sound using noise generator
   const clickNoise = new Noise(ctx);
 
@@ -66,6 +64,20 @@ export const makeKick = (
   inst.addGenerator("sub", osc1);
   inst.addGenerator("main", osc2);
   inst.addGenerator("click", clickNoise);
+
+  // Optional per-instrument effects
+  if (config?.effects) {
+    if (config.effects.overdrive) {
+      const od = new OverdriveEffect(ctx, config.effects.overdrive);
+      od.setBypassed(!config.effects.overdrive.enabled);
+      inst.addEffect(od);
+    }
+    if (config.effects.reverb) {
+      const rv = new ConvolverReverbEffect(ctx, undefined, config.effects.reverb);
+      rv.setBypassed(!config.effects.reverb.enabled);
+      inst.addEffect(rv);
+    }
+  }
 
   return inst;
 };

@@ -3,11 +3,17 @@ import { Oscillator, OscType } from "./oscillator";
 import { Noise } from "./generators";
 import { Envelope } from "./envelope";
 import { FilterConfig } from "./filter";
+import { OverdriveEffect } from "../../src/audio/effects/OverdriveEffect";
+import { ConvolverReverbEffect } from "../../src/audio/effects/ReverbEffect";
 
 export interface SnareConfig {
   decay_time: number;
   filter?: FilterConfig;
   noiseFilter?: FilterConfig;
+  effects?: {
+    overdrive?: Partial<import("../../src/audio/effects/OverdriveEffect").OverdriveParams> & { enabled?: boolean };
+    reverb?: Partial<import("../../src/audio/effects/ReverbEffect").ReverbParams> & { enabled?: boolean };
+  };
 }
 
 export const makeSnare = (
@@ -64,6 +70,20 @@ export const makeSnare = (
   inst.addGenerator("sub", osc1);
   inst.addGenerator("noise", noise);
   inst.addGenerator("tone", osc2);
+
+  // Optional per-instrument effects
+  if (config.effects) {
+    if (config.effects.overdrive) {
+      const od = new OverdriveEffect(ctx, config.effects.overdrive);
+      od.setBypassed(!config.effects.overdrive.enabled);
+      inst.addEffect(od);
+    }
+    if (config.effects.reverb) {
+      const rv = new ConvolverReverbEffect(ctx, undefined, config.effects.reverb);
+      rv.setBypassed(!config.effects.reverb.enabled);
+      inst.addEffect(rv);
+    }
+  }
 
   return inst;
 };

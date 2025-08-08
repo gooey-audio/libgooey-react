@@ -45,6 +45,19 @@ export class Stage {
     };
   }
 
+  // Convenience helpers to toggle/update per-instrument effects that were added at construction
+  setInstrumentEffectBypassed(name: string, effectName: string, bypassed: boolean) {
+    const instChannel = this.instruments[name];
+    if (!instChannel) return;
+    instChannel.instrument.setEffectBypassed(effectName, bypassed);
+  }
+
+  updateInstrumentEffect(name: string, effectName: string, params: Record<string, unknown>) {
+    const instChannel = this.instruments[name];
+    if (!instChannel) return;
+    instChannel.instrument.updateEffect(effectName, params);
+  }
+
   // TODO
   // check that name exists
   trigger(name: string) {
