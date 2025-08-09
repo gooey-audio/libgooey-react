@@ -227,7 +227,7 @@ export default function ReactTestPage() {
     if (ctx && stage) {
       // Create instruments if they don't exist
       if (!stage.hasInstrument("kick")) {
-        const kick1 = makeKick(ctx, 200, {
+        const kick1 = makeKick(ctx, 100, {
           effects: {
             overdrive: {
               ...overdriveSettings.params,
@@ -339,7 +339,7 @@ export default function ReactTestPage() {
       const startTime = ctx.currentTime;
 
       // Create instruments without filter configs initially
-      const kick = makeKick(ctx, 300, {
+      const kick = makeKick(ctx, 100, {
         effects: {
           overdrive: {
             ...overdriveSettings.params,

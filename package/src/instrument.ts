@@ -9,6 +9,13 @@ export type AudioGenerator = Oscillator | Noise | WhiteNoise | PinkNoise;
 
 type InstGenerator = {
   gen: AudioGenerator;
+  gain: GainNode;
+  volume: number;
+  connectedTarget?: AudioNode | null;
+};
+
+export type GeneratorOptions = {
+  volume?: number; // linear gain, 1.0 = unity
 };
 
 // an instrument is a collection of audio generators
@@ -22,10 +29,24 @@ export class Instrument {
     this.generators = {};
   }
 
-  addGenerator(name: string, gen: AudioGenerator) {
+  addGenerator(name: string, gen: AudioGenerator, options?: GeneratorOptions) {
+    const gain = new GainNode(this.ctx);
+    const volume = options?.volume ?? 1.0;
+    gain.gain.value = volume;
+
     this.generators[name] = {
       gen,
+      gain,
+      volume,
+      connectedTarget: null,
     };
+  }
+
+  setGeneratorVolume(name: string, volume: number) {
+    const instGen = this.generators[name];
+    if (!instGen) return;
+    instGen.volume = volume;
+    instGen.gain.gain.setValueAtTime(volume, this.ctx.currentTime);
   }
 
   ensureEffectChain() {
@@ -49,22 +70,13 @@ export class Instrument {
     this.effectChain.setBypassedByName(effectName, bypassed);
   }
 
-  updateEffect<T extends EffectName>(effectName: T, params: PartialEffectParams<T>) {
+  updateEffect<T extends EffectName>(
+    effectName: T,
+    params: PartialEffectParams<T>
+  ) {
     if (!this.effectChain) return;
     this.effectChain.updateByName(effectName, params);
   }
-
-  // link this generators of this instrument
-  // to the stage
-  // could otherwise be down via prop access
-  // connect(gain: GainNode) {
-  //   for (const key in this.generators) {
-  //     if (this.generators.hasOwnProperty(key)) {
-  //       const gen = this.generators[key].gen;
-  //       gen.connect(gain);
-  //     }
-  //   }
-  // }
 
   // trigger sort of only makes sense for "oneshot instruments"
   trigger(destination?: AudioNode) {
@@ -74,10 +86,27 @@ export class Instrument {
   triggerAt(time: number, destination?: AudioNode) {
     for (const key in this.generators) {
       if (this.generators.hasOwnProperty(key)) {
-        const gen = this.generators[key].gen;
-        // If there is an effect chain, route generators through it
-        const targetDestination = this.effectChain ? this.effectChain.input : destination;
-        const osc = gen.start(time, targetDestination);
+        const instGen = this.generators[key];
+        const gen = instGen.gen;
+
+        // Determine where this generator should ultimately feed into
+        const targetDestination = this.effectChain
+          ? this.effectChain.input
+          : destination || this.ctx.destination;
+
+        // Ensure the per-generator gain is connected to the correct target without duplicating connections
+        if (instGen.connectedTarget !== targetDestination) {
+          try {
+            instGen.gain.disconnect();
+          } catch (_) {
+            // ignore if not connected
+          }
+          instGen.gain.connect(targetDestination);
+          instGen.connectedTarget = targetDestination;
+        }
+
+        // Start the generator into its dedicated gain node (for volume control)
+        const osc = gen.start(time, instGen.gain);
 
         if (osc) {
           // the stop time should really be controlled by
@@ -86,23 +115,10 @@ export class Instrument {
         }
       }
     }
-    // Ensure the chain output is connected to the provided destination
+    // Ensure the chain output is connected to the provided destination, if any
     if (this.effectChain && destination) {
       this.effectChain.output.disconnect();
       this.effectChain.output.connect(destination);
     }
   }
-
-
 }
-
-// export class OneShot extends Instrument {
-//   // private ctx: AudioContext;
-//   constructor(audioContext: AudioContext) {
-//     super(audioContext);
-//   }
-// }
-
-// class Oneshot extends Instrument {
-
-// }

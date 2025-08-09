@@ -30,7 +30,7 @@ export const makeKick = (
   // Fast "click" envelope for the sine wave (Attack: 0-1ms, Decay: 5-20ms, Sustain: 0%, Release: 0ms)
   const clickEnvelope: ADSRConfig = config?.clickEnvelope || {
     attack: 0.001, // 1ms attack
-    decay: 0.01, // 10ms decay (between 5-20ms range)
+    decay: 0.1, // 10ms decay (between 5-20ms range)
     sustain: 0, // 0% sustain
     release: 0, // 0ms release
   };
@@ -43,7 +43,7 @@ export const makeKick = (
   // Main envelope for combined signal (Attack: 0.5-400ms, Decay: 0.5-4000ms, Sustain: 0%, Release: 0ms)
   const mainEnvelope: ADSRConfig = config?.mainEnvelope || {
     attack: 0.002, // 2ms attack (within 0.5-400ms range)
-    decay: 0.15, // 150ms decay (within 0.5-4000ms range)
+    decay: 0.15, 
     sustain: 0, // 0% sustain
     release: 0, // 0ms release
   };
@@ -62,7 +62,10 @@ export const makeKick = (
   pinkNoise.setFilter(filterConfig);
 
   inst.addGenerator("sine", sineOsc);
-  inst.addGenerator("pink", pinkNoise);
+
+  // TODO
+  // probably this just needed more lowpass filtration
+  inst.addGenerator("pink", pinkNoise, { volume: 0.04 });
 
   // Optional per-instrument effects
   if (config?.effects) {
