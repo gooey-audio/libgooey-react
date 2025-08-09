@@ -1,40 +1,55 @@
-export interface OverdriveConfig {
-  drive?: number;
+import { SingleInOutEffect } from './SingleInOutEffect';
+
+export type OverdriveParams = {
+  mix: number; // 0..1
+  drive: number; // 0..1.5
+  toneHz: number; // lowpass frequency
+};
+
+export class OverdriveEffect extends SingleInOutEffect<OverdriveParams> {
+  private readonly shaper: WaveShaperNode;
+  private readonly postFilter: BiquadFilterNode;
+
+  constructor(ctx: AudioContext, opts: Partial<OverdriveParams> = {}) {
+    super(ctx, 'Overdrive', opts.mix ?? 0.5);
+    this.shaper = new WaveShaperNode(ctx, { oversample: '4x' });
+    this.postFilter = new BiquadFilterNode(ctx, {
+      type: 'lowpass',
+      frequency: 1200,
+    });
+    this.shaper.connect(this.postFilter);
+    this.initializeEffectCore(this.shaper, this.postFilter);
+    this.update({
+      drive: opts.drive ?? 0.75,
+      toneHz: opts.toneHz ?? 1200,
+      mix: opts.mix ?? 0.5,
+    });
+  }
+
+  update(params: Partial<OverdriveParams>) {
+    if (params.mix !== undefined) this.setMix(params.mix);
+
+    if (params.drive !== undefined) {
+      const drive = Math.max(0, Math.min(1.5, params.drive));
+      this.shaper.curve = createOverdriveCurve(drive);
+    }
+    if (params.toneHz !== undefined) {
+      this.postFilter.frequency.value = Math.max(20, params.toneHz);
+    }
+  }
+
+  remove() {
+    super.remove();
+  }
 }
 
-export class Overdrive {
-  private ctx: AudioContext;
-  private node: WaveShaperNode;
-
-  constructor(ctx: AudioContext, config: OverdriveConfig = {}) {
-    this.ctx = ctx;
-    this.node = this.createOverdriveNode(config.drive || 1);
+function createOverdriveCurve(drive: number) {
+  const samples = 2048;
+  const curve = new Float32Array(samples);
+  const k = drive * 100;
+  for (let i = 0; i < samples; i++) {
+    const x = (i / samples) * 2 - 1;
+    curve[i] = ((1 + k) * x) / (1 + k * Math.abs(x));
   }
-
-  getNode(): WaveShaperNode {
-    return this.node;
-  }
-
-  setDrive(drive: number) {
-    this.node.curve = this.createOverdriveCurve(drive);
-  }
-
-  private createOverdriveNode(drive: number): WaveShaperNode {
-    const node = this.ctx.createWaveShaper();
-    node.curve = this.createOverdriveCurve(drive);
-    node.oversample = "4x"; // helps reduce aliasing
-    return node;
-  }
-
-  private createOverdriveCurve(drive: number): Float32Array {
-    const samples = 44100;
-    const curve = new Float32Array(samples);
-    const g = Math.max(1, drive);
-    for (let i = 0; i < samples; i++) {
-      const x = (i * 2) / samples - 1; // -1 to 1
-      // Pre-gain then arctangent soft clipping
-      curve[i] = (2 / Math.PI) * Math.atan(g * x);
-    }
-    return curve;
-  }
+  return curve;
 }

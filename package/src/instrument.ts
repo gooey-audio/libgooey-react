@@ -1,9 +1,8 @@
 import { Oscillator } from "./oscillator";
 import { Noise, WhiteNoise, PinkNoise } from "./generators";
-import { OverdriveConfig } from "./effects";
-import { EffectChain } from "../../src/audio/effects/EffectChain";
-import { AudioEffect } from "../../src/audio/effects/AudioEffect";
-import { EffectName, PartialEffectParams } from "../../src/audio/effects/EffectRegistry";
+import { EffectChain } from "./effects/EffectChain";
+import { AudioEffect } from "./effects/AudioEffect";
+import { EffectName, PartialEffectParams } from "./effects/EffectRegistry";
 
 // Define a type for any generator (Oscillator or Noise)
 export type AudioGenerator = Oscillator | Noise | WhiteNoise | PinkNoise;
@@ -94,28 +93,7 @@ export class Instrument {
     }
   }
 
-  // Apply overdrive effect to all oscillators in this instrument
-  setOverdrive(config: OverdriveConfig) {
-    for (const key in this.generators) {
-      if (this.generators.hasOwnProperty(key)) {
-        const gen = this.generators[key].gen;
-        if (gen instanceof Oscillator) {
-          gen.setOverdrive(config);
-        }
-      }
-    }
-  }
 
-  removeOverdrive() {
-    for (const key in this.generators) {
-      if (this.generators.hasOwnProperty(key)) {
-        const gen = this.generators[key].gen;
-        if (gen instanceof Oscillator) {
-          gen.removeOverdrive();
-        }
-      }
-    }
-  }
 }
 
 // export class OneShot extends Instrument {

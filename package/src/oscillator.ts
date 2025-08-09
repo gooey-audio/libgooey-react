@@ -1,6 +1,5 @@
 import { Envelope, ADSRConfig } from "./envelope";
 import { Filter, FilterConfig } from "./filter";
-import { Overdrive, OverdriveConfig } from "./effects";
 
 export enum OscType {
   Triangle,
@@ -15,7 +14,6 @@ export class Oscillator {
   private envelope?: Envelope;
   private pitchEnvelope?: Envelope;
   private filter?: Filter;
-  private overdrive?: Overdrive;
   private baseFrequency: number;
 
   constructor(ctx: AudioContext, freq: number, type: OscType = OscType.Sine) {
@@ -43,33 +41,14 @@ export class Oscillator {
     osc.frequency.setValueAtTime(this.baseFrequency, now);
     gain.gain.setValueAtTime(0, now); // Start from silence, envelope will control volume
 
-    // Set up signal chain: osc -> [filter] -> [overdrive] -> gain -> destination
+    // Set up signal chain: osc -> [filter] -> gain -> destination
     const target = destination || this.ctx.destination;
-    let currentNode: AudioNode = osc;
 
     // Apply filter if present
     if (this.filter) {
-      this.filter.apply(currentNode, gain, now);
-      currentNode = gain;
+      this.filter.apply(osc, gain, now);
     } else {
-      currentNode.connect(gain);
-      currentNode = gain;
-    }
-
-    // Apply overdrive if present (after filter, before final gain)
-    if (this.overdrive) {
-      const overdriveNode = this.overdrive.getNode();
-      if (this.filter) {
-        // If we have a filter, reconnect: osc -> filter -> overdrive -> gain -> destination
-        gain.disconnect();
-        this.filter.apply(osc, overdriveNode, now);
-        overdriveNode.connect(gain);
-      } else {
-        // No filter: osc -> overdrive -> gain -> destination
-        gain.disconnect();
-        osc.connect(overdriveNode);
-        overdriveNode.connect(gain);
-      }
+      osc.connect(gain);
     }
 
     gain.connect(target);
@@ -101,14 +80,6 @@ export class Oscillator {
     if (this.filter) {
       this.filter.setFrequencyADSR(config, frequencyRange);
     }
-  }
-
-  setOverdrive(config: OverdriveConfig) {
-    this.overdrive = new Overdrive(this.ctx, config);
-  }
-
-  removeOverdrive() {
-    this.overdrive = undefined;
   }
 
   // creating the oscillator node on start, instead of constructor

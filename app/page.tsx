@@ -8,8 +8,8 @@ import { makePinkHat } from "@/package/src/pink-hat";
 import { Sequencer } from "@/package/src/sequencer";
 import { useBeatTracker } from "@/package/src/hooks";
 import { FilterConfig } from "@/package/src/filter";
-import { OverdriveParams } from "../src/audio/effects/OverdriveEffect";
-import { ReverbParams } from "../src/audio/effects/ReverbEffect";
+import { OverdriveParams } from "../package/src/effects/overdrive";
+import { ReverbParams } from "../package/src/effects/reverb";
 
 export default function ReactTestPage() {
   const [patterns, setPatterns] = useState({

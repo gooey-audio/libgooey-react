@@ -1,6 +1,6 @@
 import { Instrument } from "@/package/src/instrument";
 import { FilterConfig } from "@/package/src/filter";
-import { EffectName, PartialEffectParams } from "../../src/audio/effects/EffectRegistry";
+import { EffectName, PartialEffectParams } from "./effects/EffectRegistry";
 
 type InstrumentChannel = {
   instrument: Instrument;

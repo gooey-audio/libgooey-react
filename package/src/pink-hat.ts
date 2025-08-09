@@ -1,9 +1,7 @@
 import { Instrument } from "./instrument";
 import { PinkNoise } from "./generators";
-import { OverdriveEffect } from "../../src/audio/effects/OverdriveEffect";
-import { ConvolverReverbEffect } from "../../src/audio/effects/ReverbEffect";
-import type { OverdriveParams } from "../../src/audio/effects/OverdriveEffect";
-import type { ReverbParams } from "../../src/audio/effects/ReverbEffect";
+import { OverdriveEffect, OverdriveParams } from "./effects/overdrive";
+import { ConvolverReverbEffect, ReverbParams } from "./effects/reverb";
 
 export interface PinkHatConfig {
   decay_time: number;
