@@ -23,6 +23,7 @@ export class Instrument {
   ctx: AudioContext;
   generators: Record<string, InstGenerator>;
   private effectChain?: EffectChain;
+  private effectChainConnectedTo?: AudioNode;
 
   constructor(audioContext: AudioContext) {
     this.ctx = audioContext;
@@ -49,7 +50,7 @@ export class Instrument {
     instGen.gain.gain.setValueAtTime(volume, this.ctx.currentTime);
   }
 
-  ensureEffectChain() {
+  private ensureEffectChain() {
     if (!this.effectChain) {
       this.effectChain = new EffectChain(this.ctx);
     }
@@ -78,21 +79,39 @@ export class Instrument {
     this.effectChain.updateByName(effectName, params);
   }
 
+  hasEffect(effectName: string): boolean {
+    if (!this.effectChain) return false;
+    return this.effectChain.findByNameGeneric(effectName) !== undefined;
+  }
+
   // trigger sort of only makes sense for "oneshot instruments"
   trigger(destination?: AudioNode) {
     this.triggerAt(this.ctx.currentTime, destination);
   }
 
   triggerAt(time: number, destination?: AudioNode) {
+    // Ensure effect chain output is connected to the final destination
+    const finalDestination = destination || this.ctx.destination;
+    if (this.effectChain && this.effectChainConnectedTo !== finalDestination) {
+      // Connect effect chain output to final destination if not already connected
+      try {
+        this.effectChain.output.disconnect();
+      } catch (_) {
+        // ignore if not connected
+      }
+      this.effectChain.output.connect(finalDestination);
+      this.effectChainConnectedTo = finalDestination;
+    }
+
     for (const key in this.generators) {
       if (this.generators.hasOwnProperty(key)) {
         const instGen = this.generators[key];
         const gen = instGen.gen;
 
-        // Determine where this generator should ultimately feed into
+        // Determine where this generator should feed into
         const targetDestination = this.effectChain
           ? this.effectChain.input
-          : destination || this.ctx.destination;
+          : finalDestination;
 
         // Ensure the per-generator gain is connected to the correct target without duplicating connections
         if (instGen.connectedTarget !== targetDestination) {
@@ -114,11 +133,6 @@ export class Instrument {
           osc.stop(this.ctx.currentTime + 0.5);
         }
       }
-    }
-    // Ensure the chain output is connected to the provided destination, if any
-    if (this.effectChain && destination) {
-      this.effectChain.output.disconnect();
-      this.effectChain.output.connect(destination);
     }
   }
 }
