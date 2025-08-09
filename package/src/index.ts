@@ -3,7 +3,7 @@ export { Oscillator, OscType } from "./oscillator";
 export { Noise } from "./generators";
 export { Envelope, type ADSRConfig } from "./envelope";
 export { Filter, type FilterConfig } from "./filter";
-export { Overdrive, type OverdriveConfig } from "./effects";
+export { OverdriveEffect as Overdrive, type OverdriveParams as OverdriveConfig } from "./effects";
 
 // Instrument and composition
 export { Instrument } from "./instrument";
