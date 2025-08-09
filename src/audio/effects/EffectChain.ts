@@ -1,4 +1,5 @@
 import { AudioEffect, EffectParams } from './AudioEffect';
+import { EffectName, EffectParamsForName, PartialEffectParams, EffectClassForName } from './EffectRegistry';
 
 export class EffectChain {
   readonly input: GainNode;
@@ -43,20 +44,30 @@ export class EffectChain {
     effect.update(params as Partial<EffectParams<E>>);
   }
 
-  findByName<T extends AudioEffect<any> = AudioEffect<any>>(name: string): T | undefined {
-    return this.effects.find((e) => e.name === name) as T | undefined;
+  findByName<T extends EffectName>(name: T): EffectClassForName<T> | undefined {
+    return this.effects.find((e) => e.name === name) as EffectClassForName<T> | undefined;
+  }
+
+  // Generic version for cases where effect name is not known at compile time
+  findByNameGeneric(name: string): AudioEffect<any> | undefined {
+    return this.effects.find((e) => e.name === name);
   }
 
   setBypassedByName(name: string, bypassed: boolean) {
-    const effect = this.findByName(name);
+    const effect = this.findByNameGeneric(name);
     if (effect) effect.setBypassed(bypassed);
   }
 
-  updateByName(name: string, params: Record<string, unknown>) {
+  updateByName<T extends EffectName>(name: T, params: PartialEffectParams<T>) {
     const effect = this.findByName(name);
-    if (effect) effect.update(params as any);
+    if (effect) effect.update(params);
   }
 
+  // TODO
+  // shouldn't be called during runtime because we have bypass
+  // it could make more sense to have a .build() method to defer connecting nodes
+  // on each change 
+  // may also be insignificant performance hit at setup time
   private rebuild() {
     this.input.disconnect();
     // IMPORTANT: Do not disconnect effect.input here, as many effects wire their

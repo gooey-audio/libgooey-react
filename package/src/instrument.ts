@@ -3,6 +3,7 @@ import { Noise, WhiteNoise, PinkNoise } from "./generators";
 import { OverdriveConfig } from "./effects";
 import { EffectChain } from "../../src/audio/effects/EffectChain";
 import { AudioEffect } from "../../src/audio/effects/AudioEffect";
+import { EffectName, PartialEffectParams } from "../../src/audio/effects/EffectRegistry";
 
 // Define a type for any generator (Oscillator or Noise)
 export type AudioGenerator = Oscillator | Noise | WhiteNoise | PinkNoise;
@@ -49,7 +50,7 @@ export class Instrument {
     this.effectChain.setBypassedByName(effectName, bypassed);
   }
 
-  updateEffect(effectName: string, params: Record<string, unknown>) {
+  updateEffect<T extends EffectName>(effectName: T, params: PartialEffectParams<T>) {
     if (!this.effectChain) return;
     this.effectChain.updateByName(effectName, params);
   }

@@ -1,5 +1,6 @@
 import { Instrument } from "@/package/src/instrument";
 import { FilterConfig } from "@/package/src/filter";
+import { EffectName, PartialEffectParams } from "../../src/audio/effects/EffectRegistry";
 
 type InstrumentChannel = {
   instrument: Instrument;
@@ -52,7 +53,7 @@ export class Stage {
     instChannel.instrument.setEffectBypassed(effectName, bypassed);
   }
 
-  updateInstrumentEffect(name: string, effectName: string, params: Record<string, unknown>) {
+  updateInstrumentEffect<T extends EffectName>(name: string, effectName: T, params: PartialEffectParams<T>) {
     const instChannel = this.instruments[name];
     if (!instChannel) return;
     instChannel.instrument.updateEffect(effectName, params);

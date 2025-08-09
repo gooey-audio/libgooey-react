@@ -185,9 +185,9 @@ export default function ReactTestPage() {
     }));
     // Propagate param changes
     if (stage) {
-      const params = { ...overdriveSettings.params, ...updates };
+      const params: OverdriveParams = { ...overdriveSettings.params, ...updates };
       ["kick", "kick2", "snare", "hat", "pinkHat"].forEach((name) =>
-        stage.updateInstrumentEffect(name, "Overdrive", params as any),
+        stage.updateInstrumentEffect(name, "Overdrive", params),
       );
     }
   };
@@ -208,9 +208,9 @@ export default function ReactTestPage() {
       params: { ...prev.params, ...updates },
     }));
     if (stage) {
-      const params = { ...reverbSettings.params, ...updates };
+      const params: ReverbParams = { ...reverbSettings.params, ...updates };
       ["kick", "kick2", "snare", "hat", "pinkHat"].forEach((name) =>
-        stage.updateInstrumentEffect(name, "Reverb", params as any),
+        stage.updateInstrumentEffect(name, "Reverb", params),
       );
     }
   };
