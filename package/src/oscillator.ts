@@ -44,15 +44,14 @@ export class Oscillator {
     // Set up signal chain: osc -> [filter] -> gain -> destination
     const target = destination || this.ctx.destination;
 
+    // Apply filter if present
     if (this.filter) {
-      // Signal chain: osc -> filter -> gain -> destination
       this.filter.apply(osc, gain, now);
-      gain.connect(target);
     } else {
-      // Standard chain: osc -> gain -> destination
       osc.connect(gain);
-      gain.connect(target);
     }
+
+    gain.connect(target);
 
     return { osc, gain };
   }

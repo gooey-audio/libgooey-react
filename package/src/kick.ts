@@ -2,10 +2,16 @@ import { Instrument } from "./instrument";
 import { Oscillator } from "./oscillator";
 import { Noise } from "./generators";
 import { FilterConfig } from "./filter";
+import { OverdriveEffect, OverdriveParams } from "./effects/overdrive";
+import { ConvolverReverbEffect, ReverbParams } from "./effects/reverb";
 
 export interface KickConfig {
   filter?: FilterConfig;
   clickFilter?: FilterConfig;
+  effects?: {
+    overdrive?: Partial<OverdriveParams> & { enabled?: boolean };
+    reverb?: Partial<ReverbParams> & { enabled?: boolean };
+  };
 }
 
 export const makeKick = (
@@ -58,6 +64,20 @@ export const makeKick = (
   inst.addGenerator("sub", osc1);
   inst.addGenerator("main", osc2);
   inst.addGenerator("click", clickNoise);
+
+  // Optional per-instrument effects
+  if (config?.effects) {
+    if (config.effects.overdrive) {
+      const od = new OverdriveEffect(ctx, config.effects.overdrive);
+      od.setBypassed(!config.effects.overdrive.enabled);
+      inst.addEffect(od);
+    }
+    if (config.effects.reverb) {
+      const rv = new ConvolverReverbEffect(ctx, undefined, config.effects.reverb);
+      rv.setBypassed(!config.effects.reverb.enabled);
+      inst.addEffect(rv);
+    }
+  }
 
   return inst;
 };
