@@ -224,22 +224,39 @@ export default function ReactTestPage() {
     if (ctx && stage && !sequencerRef.current) {
       const startTime = ctx.currentTime;
 
-      // Create instruments without filter configs initially
-      const kick = makeKick(ctx, 50, 300);
+      // Create instruments with effects chains for UI control
+      const kick = makeKick(ctx, 50, 300, {
+        effects: {
+          overdrive: { mix: 0.5, drive: 0.75, toneHz: 1200, enabled: false },
+          reverb: { mix: 0.25, preDelayMs: 20, enabled: false }
+        }
+      });
       stage.addInstrument("kick", kick);
 
       const snare = makeSnare(ctx, 400, 800, {
         decay_time: 0.3,
+        effects: {
+          overdrive: { mix: 0.5, drive: 0.75, toneHz: 1200, enabled: false },
+          reverb: { mix: 0.25, preDelayMs: 20, enabled: false }
+        }
       });
       stage.addInstrument("snare", snare);
 
       const hat = makeSnare(ctx, 200, 800, {
         decay_time: 0.1,
+        effects: {
+          overdrive: { mix: 0.5, drive: 0.75, toneHz: 1200, enabled: false },
+          reverb: { mix: 0.25, preDelayMs: 20, enabled: false }
+        }
       });
       stage.addInstrument("hat", hat);
 
       const pinkHat = makePinkHat(ctx, {
         decay_time: 0.1,
+        effects: {
+          overdrive: { mix: 0.5, drive: 0.75, toneHz: 1200, enabled: false },
+          reverb: { mix: 0.25, preDelayMs: 20, enabled: false }
+        }
       });
       stage.addInstrument("pinkHat", pinkHat);
 
