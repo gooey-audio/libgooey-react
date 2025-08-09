@@ -10,6 +10,7 @@ import { useBeatTracker } from "@/package/src/hooks";
 import { FilterConfig } from "@/package/src/filter";
 import { OverdriveParams } from "@/package/src/effects/overdrive";
 import { ReverbParams } from "@/package/src/effects/reverb";
+import InstrumentControls from "./InstrumentControls";
 
 export default function ReactTestPage() {
   const [patterns, setPatterns] = useState({
@@ -636,6 +637,15 @@ export default function ReactTestPage() {
           </div>
         </div>
       </div>
+
+      <InstrumentControls
+        instruments={instruments}
+        volumes={volumes}
+        filterSettings={filterSettings}
+        stage={stage}
+        onVolumeChange={handleVolumeChange}
+        onFilterChange={handleFilterChange}
+      />
       <div className="my-6">
         <h3 className="text-lg font-semibold mb-3">Sequencer Pattern</h3>
         <div className="space-y-2">
@@ -709,167 +719,23 @@ export default function ReactTestPage() {
       </div>
 
       <div className="my-6">
-        <h3 className="text-lg font-semibold mb-3">Volume Controls</h3>
-        <div className="space-y-3">
-          {/* Master Volume */}
-          <div className="flex items-center gap-4">
-            <div className="w-16 text-sm font-medium text-gray-700">Master</div>
-            <input
-              type="range"
-              min="0"
-              max="2"
-              step="0.01"
-              value={volumes.master}
-              onChange={(e) =>
-                handleVolumeChange("master", parseFloat(e.target.value))
-              }
-              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-            />
-            <div className="w-12 text-sm text-gray-600">
-              {(volumes.master * 100).toFixed(0)}%
-            </div>
+        <h3 className="text-lg font-semibold mb-3">Master Volume</h3>
+        <div className="flex items-center gap-4">
+          <div className="w-16 text-sm font-medium text-gray-700">Master</div>
+          <input
+            type="range"
+            min="0"
+            max="2"
+            step="0.01"
+            value={volumes.master}
+            onChange={(e) =>
+              handleVolumeChange("master", parseFloat(e.target.value))
+            }
+            className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+          />
+          <div className="w-12 text-sm text-gray-600">
+            {(volumes.master * 100).toFixed(0)}%
           </div>
-
-          {/* Instrument Volumes */}
-          {instruments.map((instrument) => (
-            <div key={instrument} className="flex items-center gap-4">
-              <div className="w-16 text-sm font-medium text-gray-700 capitalize">
-                {instrument}
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="2"
-                step="0.01"
-                value={volumes[instrument as keyof typeof volumes]}
-                onChange={(e) =>
-                  handleVolumeChange(instrument, parseFloat(e.target.value))
-                }
-                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="w-12 text-sm text-gray-600">
-                {(volumes[instrument as keyof typeof volumes] * 100).toFixed(0)}
-                %
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="my-6">
-        <h3 className="text-lg font-semibold mb-3">Filter Controls</h3>
-        <div className="space-y-4">
-          {instruments.map((instrument) => {
-            const settings =
-              filterSettings[instrument as keyof typeof filterSettings];
-
-            return (
-              <div
-                key={instrument}
-                className="p-4 border border-gray-300 rounded-lg bg-gray-50"
-              >
-                <div className="flex items-center gap-4 mb-3">
-                  <div className="w-16 text-sm font-medium text-gray-700 capitalize">
-                    {instrument}
-                  </div>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={settings.enabled}
-                      onChange={(e) =>
-                        handleFilterChange(
-                          instrument,
-                          "enabled",
-                          e.target.checked
-                        )
-                      }
-                      className="form-checkbox"
-                    />
-                    <span className="text-sm text-gray-600">Enable Filter</span>
-                  </label>
-                </div>
-
-                {settings.enabled && (
-                  <div className="space-y-3">
-                    {/* Frequency Control */}
-                    <div className="flex items-center gap-4">
-                      <div className="w-20 text-xs text-gray-600">
-                        Frequency
-                      </div>
-                      <input
-                        type="range"
-                        min="100"
-                        max="20000"
-                        step="100"
-                        value={settings.frequency}
-                        onChange={(e) =>
-                          handleFilterChange(
-                            instrument,
-                            "frequency",
-                            parseInt(e.target.value)
-                          )
-                        }
-                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                      <div className="w-16 text-xs text-gray-600">
-                        {settings.frequency}Hz
-                      </div>
-                    </div>
-
-                    {/* Q (Resonance) Control */}
-                    <div className="flex items-center gap-4">
-                      <div className="w-20 text-xs text-gray-600">
-                        Resonance
-                      </div>
-                      <input
-                        type="range"
-                        min="0.1"
-                        max="10"
-                        step="0.1"
-                        value={settings.Q}
-                        onChange={(e) =>
-                          handleFilterChange(
-                            instrument,
-                            "Q",
-                            parseFloat(e.target.value)
-                          )
-                        }
-                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                      <div className="w-16 text-xs text-gray-600">
-                        {settings.Q.toFixed(1)}
-                      </div>
-                    </div>
-
-                    {/* Filter Type Control */}
-                    <div className="flex items-center gap-4">
-                      <div className="w-20 text-xs text-gray-600">Type</div>
-                      <select
-                        value={settings.type}
-                        onChange={(e) =>
-                          handleFilterChange(
-                            instrument,
-                            "type",
-                            e.target.value as BiquadFilterType
-                          )
-                        }
-                        className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded bg-white"
-                      >
-                        <option value="lowpass">Low Pass</option>
-                        <option value="highpass">High Pass</option>
-                        <option value="bandpass">Band Pass</option>
-                        <option value="notch">Notch</option>
-                        <option value="allpass">All Pass</option>
-                        <option value="peaking">Peaking</option>
-                        <option value="lowshelf">Low Shelf</option>
-                        <option value="highshelf">High Shelf</option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
         </div>
       </div>
 
