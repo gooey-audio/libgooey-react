@@ -1,13 +1,16 @@
 import { Instrument } from "./instrument";
-import { Oscillator } from "./oscillator";
-import { Noise } from "./generators";
+import { Oscillator, OscType } from "./oscillator";
+import { PinkNoise } from "./generators/pink-noise";
 import { FilterConfig } from "./filter";
+import { ADSRConfig } from "./envelope";
 import { OverdriveEffect, OverdriveParams } from "./effects/overdrive";
 import { ConvolverReverbEffect, ReverbParams } from "./effects/reverb";
 
 export interface KickConfig {
   filter?: FilterConfig;
   clickFilter?: FilterConfig;
+  clickEnvelope?: ADSRConfig;
+  mainEnvelope?: ADSRConfig;
   effects?: {
     overdrive?: Partial<OverdriveParams> & { enabled?: boolean };
     reverb?: Partial<ReverbParams> & { enabled?: boolean };
@@ -16,54 +19,53 @@ export interface KickConfig {
 
 export const makeKick = (
   ctx: AudioContext,
-  freq1: number,
-  freq2: number,
+  frequency: number = 60, // Single base frequency for the kick
   config?: KickConfig
 ) => {
   const inst = new Instrument(ctx);
 
-  const osc1 = new Oscillator(ctx, freq1);
-  const osc2 = new Oscillator(ctx, freq2);
+  // Create sine wave oscillator for the kick body
+  const sineOsc = new Oscillator(ctx, frequency, OscType.Sine);
 
-  // Add pitch envelopes to the tonal oscillators
-  osc1.setPitchADSR({
-    attack: 0.005, // Very quick attack
-    decay: 0.1, // Fast decay to create the pitch drop
-    sustain: 0, // No sustain - typical for kick drums
-    release: 0.05, // Quick release
-  });
+  // Fast "click" envelope for the sine wave (Attack: 0-1ms, Decay: 5-20ms, Sustain: 0%, Release: 0ms)
+  const clickEnvelope: ADSRConfig = config?.clickEnvelope || {
+    attack: 0.001, // 1ms attack
+    decay: 0.1, // 10ms decay (between 5-20ms range)
+    sustain: 0, // 0% sustain
+    release: 0, // 0ms release
+  };
 
-  osc2.setPitchADSR({
-    attack: 0.005, // Very quick attack
-    decay: 0.08, // Slightly faster decay for the main oscillator
-    sustain: 0, // No sustain - typical for kick drums
-    release: 0.05, // Quick release
-  });
+  sineOsc.setADSR(clickEnvelope);
 
-  // Add optional filters to oscillators
-  if (config?.filter) {
-    osc1.setFilter(config.filter);
-    osc2.setFilter(config.filter);
-  }
+  // Create pink noise generator
+  const pinkNoise = new PinkNoise(ctx);
 
-  // Add short "click" sound using noise generator
-  const clickNoise = new Noise(ctx);
+  // Main envelope for combined signal (Attack: 0.5-400ms, Decay: 0.5-4000ms, Sustain: 0%, Release: 0ms)
+  const mainEnvelope: ADSRConfig = config?.mainEnvelope || {
+    attack: 0.002, // 2ms attack (within 0.5-400ms range)
+    decay: 0.15, 
+    sustain: 0, // 0% sustain
+    release: 0, // 0ms release
+  };
 
-  clickNoise.setADSR({
-    attack: 0.001, // Extremely quick attack for sharp click
-    decay: 0.01, // Very short decay
-    sustain: 0, // No sustain
-    release: 0.005, // Very quick release
-  });
+  pinkNoise.setADSR(mainEnvelope);
 
-  // Add optional filter to click noise (separate config)
-  if (config?.clickFilter) {
-    clickNoise.setFilter(config.clickFilter);
-  }
+  // Configure lowpass resonant filter (100Hz cutoff, Q=0.2)
+  const filterConfig: FilterConfig = config?.filter || {
+    frequency: 100, // 100Hz cutoff
+    Q: 0.2, // Q of 0.2
+    type: "lowpass", // Lowpass resonant filter
+  };
 
-  inst.addGenerator("sub", osc1);
-  inst.addGenerator("main", osc2);
-  inst.addGenerator("click", clickNoise);
+  // Apply filter to both sine wave and pink noise
+  sineOsc.setFilter(filterConfig);
+  pinkNoise.setFilter(filterConfig);
+
+  inst.addGenerator("sine", sineOsc);
+
+  // TODO
+  // probably this just needed more lowpass filtration
+  inst.addGenerator("pink", pinkNoise, { volume: 0.04 });
 
   // Optional per-instrument effects
   if (config?.effects) {
@@ -73,7 +75,11 @@ export const makeKick = (
       inst.addEffect(od);
     }
     if (config.effects.reverb) {
-      const rv = new ConvolverReverbEffect(ctx, undefined, config.effects.reverb);
+      const rv = new ConvolverReverbEffect(
+        ctx,
+        undefined,
+        config.effects.reverb
+      );
       rv.setBypassed(!config.effects.reverb.enabled);
       inst.addEffect(rv);
     }
