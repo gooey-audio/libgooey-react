@@ -8,8 +8,7 @@ import { makePinkHat } from "@/package/src/pink-hat";
 import { Sequencer } from "@/package/src/sequencer";
 import { useBeatTracker } from "@/package/src/hooks";
 import { FilterConfig } from "@/package/src/filter";
-import { OverdriveParams } from "@/package/src/effects/overdrive";
-import { ReverbParams } from "@/package/src/effects/reverb";
+import InstrumentControls from "./InstrumentControls";
 
 export default function ReactTestPage() {
   const [patterns, setPatterns] = useState({
@@ -150,92 +149,18 @@ export default function ReactTestPage() {
     }
   };
 
-  // ==== Effects: state and helpers ====
-  const [overdriveSettings, setOverdriveSettings] = useState<{
-    enabled: boolean;
-    params: OverdriveParams;
-  }>({
-    enabled: false,
-    params: { mix: 0.5, drive: 0.75, toneHz: 1200 },
-  });
-
-  const [reverbSettings, setReverbSettings] = useState<{
-    enabled: boolean;
-    params: ReverbParams;
-  }>({
-    enabled: false,
-    params: { mix: 0.25, preDelayMs: 20 },
-  });
-
-  const updateOverdrive = (updates: Partial<OverdriveParams> | { enabled: boolean }) => {
-    if ("enabled" in updates) {
-      const enabled = updates.enabled;
-      setOverdriveSettings((prev) => ({ ...prev, enabled }));
-      // Propagate bypass to existing instruments
-      if (stage) {
-        ["kick", "kick2", "snare", "hat", "pinkHat"].forEach((name) =>
-          stage.setInstrumentEffectBypassed(name, "Overdrive", !enabled),
-        );
-      }
-      return;
-    }
-    setOverdriveSettings((prev) => ({
-      ...prev,
-      params: { ...prev.params, ...updates },
-    }));
-    // Propagate param changes
-    if (stage) {
-      const params: OverdriveParams = { ...overdriveSettings.params, ...updates };
-      ["kick", "kick2", "snare", "hat", "pinkHat"].forEach((name) =>
-        stage.updateInstrumentEffect(name, "Overdrive", params),
-      );
-    }
-  };
-
-  const updateReverb = (updates: Partial<ReverbParams> | { enabled: boolean }) => {
-    if ("enabled" in updates) {
-      const enabled = updates.enabled;
-      setReverbSettings((prev) => ({ ...prev, enabled }));
-      if (stage) {
-        ["kick", "kick2", "snare", "hat", "pinkHat"].forEach((name) =>
-          stage.setInstrumentEffectBypassed(name, "Reverb", !enabled),
-        );
-      }
-      return;
-    }
-    setReverbSettings((prev) => ({
-      ...prev,
-      params: { ...prev.params, ...updates },
-    }));
-    if (stage) {
-      const params: ReverbParams = { ...reverbSettings.params, ...updates };
-      ["kick", "kick2", "snare", "hat", "pinkHat"].forEach((name) =>
-        stage.updateInstrumentEffect(name, "Reverb", params),
-      );
-    }
-  };
 
   const triggerKick = () => {
     const ctx = audioContext;
     if (ctx && stage) {
       // Create instruments if they don't exist
       if (!stage.hasInstrument("kick")) {
-        const kick1 = makeKick(ctx, 200, 800, {
-          effects: {
-            overdrive: { ...overdriveSettings.params, enabled: overdriveSettings.enabled },
-            reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
-          },
-        });
+        const kick1 = makeKick(ctx, 200, 800);
         stage.addInstrument("kick", kick1);
       }
 
       if (!stage.hasInstrument("kick2")) {
-        const kick2 = makeKick(ctx, 1500, 2000, {
-          effects: {
-            overdrive: { ...overdriveSettings.params, enabled: overdriveSettings.enabled },
-            reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
-          },
-        });
+        const kick2 = makeKick(ctx, 1500, 2000);
         stage.addInstrument("kick2", kick2);
       }
 
@@ -260,10 +185,6 @@ export default function ReactTestPage() {
       if (!stage.hasInstrument("snare")) {
         const snare1 = makeSnare(ctx, 200, 800, {
           decay_time: 0.3,
-          effects: {
-            overdrive: { ...overdriveSettings.params, enabled: overdriveSettings.enabled },
-            reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
-          },
         });
         stage.addInstrument("snare", snare1);
       }
@@ -285,10 +206,6 @@ export default function ReactTestPage() {
       if (!stage.hasInstrument("pinkHat")) {
         const pinkHat1 = makePinkHat(ctx, {
           decay_time: 0.12,
-          effects: {
-            overdrive: { ...overdriveSettings.params, enabled: overdriveSettings.enabled },
-            reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
-          },
         });
         stage.addInstrument("pinkHat", pinkHat1);
       }
@@ -307,39 +224,39 @@ export default function ReactTestPage() {
     if (ctx && stage && !sequencerRef.current) {
       const startTime = ctx.currentTime;
 
-      // Create instruments without filter configs initially
+      // Create instruments with effects chains for UI control
       const kick = makeKick(ctx, 50, 300, {
         effects: {
-          overdrive: { ...overdriveSettings.params, enabled: overdriveSettings.enabled },
-          reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
-        },
+          overdrive: { mix: 0.5, drive: 0.75, toneHz: 1200, enabled: false },
+          reverb: { mix: 0.25, preDelayMs: 20, enabled: false }
+        }
       });
       stage.addInstrument("kick", kick);
 
       const snare = makeSnare(ctx, 400, 800, {
         decay_time: 0.3,
         effects: {
-          overdrive: { ...overdriveSettings.params, enabled: overdriveSettings.enabled },
-          reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
-        },
+          overdrive: { mix: 0.5, drive: 0.75, toneHz: 1200, enabled: false },
+          reverb: { mix: 0.25, preDelayMs: 20, enabled: false }
+        }
       });
       stage.addInstrument("snare", snare);
 
       const hat = makeSnare(ctx, 200, 800, {
         decay_time: 0.1,
         effects: {
-          overdrive: { ...overdriveSettings.params, enabled: overdriveSettings.enabled },
-          reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
-        },
+          overdrive: { mix: 0.5, drive: 0.75, toneHz: 1200, enabled: false },
+          reverb: { mix: 0.25, preDelayMs: 20, enabled: false }
+        }
       });
       stage.addInstrument("hat", hat);
 
       const pinkHat = makePinkHat(ctx, {
         decay_time: 0.1,
         effects: {
-          overdrive: { ...overdriveSettings.params, enabled: overdriveSettings.enabled },
-          reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
-        },
+          overdrive: { mix: 0.5, drive: 0.75, toneHz: 1200, enabled: false },
+          reverb: { mix: 0.25, preDelayMs: 20, enabled: false }
+        }
       });
       stage.addInstrument("pinkHat", pinkHat);
 
@@ -468,119 +385,14 @@ export default function ReactTestPage() {
         </button>
       </div>
 
-      <div className="my-6">
-        <h3 className="text-lg font-semibold mb-3">Master Effects</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Overdrive */}
-          <div className="p-4 border border-gray-300 rounded-lg bg-gray-50">
-            <div className="flex items-center justify-between mb-3">
-              <div className="font-medium">Overdrive</div>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={overdriveSettings.enabled}
-                  onChange={(e) => updateOverdrive({ enabled: e.target.checked })}
-                />
-                <span className="text-sm text-gray-600">Enable</span>
-              </label>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-4">
-                <div className="w-20 text-xs text-gray-600">Mix</div>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={overdriveSettings.params.mix}
-                  onChange={(e) => updateOverdrive({ mix: parseFloat(e.target.value) })}
-                  className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                />
-                <div className="w-16 text-xs text-gray-600">
-                  {(overdriveSettings.params.mix * 100).toFixed(0)}%
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="w-20 text-xs text-gray-600">Drive</div>
-                <input
-                  type="range"
-                  min="0"
-                  max="1.5"
-                  step="0.01"
-                  value={overdriveSettings.params.drive}
-                  onChange={(e) => updateOverdrive({ drive: parseFloat(e.target.value) })}
-                  className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                />
-                <div className="w-16 text-xs text-gray-600">
-                  {overdriveSettings.params.drive.toFixed(2)}
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="w-20 text-xs text-gray-600">Tone Hz</div>
-                <input
-                  type="range"
-                  min="100"
-                  max="8000"
-                  step="50"
-                  value={overdriveSettings.params.toneHz}
-                  onChange={(e) => updateOverdrive({ toneHz: parseInt(e.target.value) })}
-                  className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                />
-                <div className="w-16 text-xs text-gray-600">
-                  {overdriveSettings.params.toneHz}Hz
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Reverb */}
-          <div className="p-4 border border-gray-300 rounded-lg bg-gray-50">
-            <div className="flex items-center justify-between mb-3">
-              <div className="font-medium">Reverb</div>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={reverbSettings.enabled}
-                  onChange={(e) => updateReverb({ enabled: e.target.checked })}
-                />
-                <span className="text-sm text-gray-600">Enable</span>
-              </label>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-4">
-                <div className="w-20 text-xs text-gray-600">Mix</div>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={reverbSettings.params.mix}
-                  onChange={(e) => updateReverb({ mix: parseFloat(e.target.value) })}
-                  className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                />
-                <div className="w-16 text-xs text-gray-600">
-                  {(reverbSettings.params.mix * 100).toFixed(0)}%
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="w-20 text-xs text-gray-600">PreDelay</div>
-                <input
-                  type="range"
-                  min="0"
-                  max="200"
-                  step="1"
-                  value={reverbSettings.params.preDelayMs}
-                  onChange={(e) => updateReverb({ preDelayMs: parseInt(e.target.value) })}
-                  className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                />
-                <div className="w-16 text-xs text-gray-600">
-                  {reverbSettings.params.preDelayMs}ms
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <InstrumentControls
+        instruments={instruments}
+        volumes={volumes}
+        filterSettings={filterSettings}
+        stage={stage}
+        onVolumeChange={handleVolumeChange}
+        onFilterChange={handleFilterChange}
+      />
       <div className="my-6">
         <h3 className="text-lg font-semibold mb-3">Sequencer Pattern</h3>
         <div className="space-y-2">
@@ -654,167 +466,23 @@ export default function ReactTestPage() {
       </div>
 
       <div className="my-6">
-        <h3 className="text-lg font-semibold mb-3">Volume Controls</h3>
-        <div className="space-y-3">
-          {/* Master Volume */}
-          <div className="flex items-center gap-4">
-            <div className="w-16 text-sm font-medium text-gray-700">Master</div>
-            <input
-              type="range"
-              min="0"
-              max="2"
-              step="0.01"
-              value={volumes.master}
-              onChange={(e) =>
-                handleVolumeChange("master", parseFloat(e.target.value))
-              }
-              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-            />
-            <div className="w-12 text-sm text-gray-600">
-              {(volumes.master * 100).toFixed(0)}%
-            </div>
+        <h3 className="text-lg font-semibold mb-3">Master Volume</h3>
+        <div className="flex items-center gap-4">
+          <div className="w-16 text-sm font-medium text-gray-700">Master</div>
+          <input
+            type="range"
+            min="0"
+            max="2"
+            step="0.01"
+            value={volumes.master}
+            onChange={(e) =>
+              handleVolumeChange("master", parseFloat(e.target.value))
+            }
+            className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+          />
+          <div className="w-12 text-sm text-gray-600">
+            {(volumes.master * 100).toFixed(0)}%
           </div>
-
-          {/* Instrument Volumes */}
-          {instruments.map((instrument) => (
-            <div key={instrument} className="flex items-center gap-4">
-              <div className="w-16 text-sm font-medium text-gray-700 capitalize">
-                {instrument}
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="2"
-                step="0.01"
-                value={volumes[instrument as keyof typeof volumes]}
-                onChange={(e) =>
-                  handleVolumeChange(instrument, parseFloat(e.target.value))
-                }
-                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="w-12 text-sm text-gray-600">
-                {(volumes[instrument as keyof typeof volumes] * 100).toFixed(0)}
-                %
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="my-6">
-        <h3 className="text-lg font-semibold mb-3">Filter Controls</h3>
-        <div className="space-y-4">
-          {instruments.map((instrument) => {
-            const settings =
-              filterSettings[instrument as keyof typeof filterSettings];
-
-            return (
-              <div
-                key={instrument}
-                className="p-4 border border-gray-300 rounded-lg bg-gray-50"
-              >
-                <div className="flex items-center gap-4 mb-3">
-                  <div className="w-16 text-sm font-medium text-gray-700 capitalize">
-                    {instrument}
-                  </div>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={settings.enabled}
-                      onChange={(e) =>
-                        handleFilterChange(
-                          instrument,
-                          "enabled",
-                          e.target.checked
-                        )
-                      }
-                      className="form-checkbox"
-                    />
-                    <span className="text-sm text-gray-600">Enable Filter</span>
-                  </label>
-                </div>
-
-                {settings.enabled && (
-                  <div className="space-y-3">
-                    {/* Frequency Control */}
-                    <div className="flex items-center gap-4">
-                      <div className="w-20 text-xs text-gray-600">
-                        Frequency
-                      </div>
-                      <input
-                        type="range"
-                        min="100"
-                        max="20000"
-                        step="100"
-                        value={settings.frequency}
-                        onChange={(e) =>
-                          handleFilterChange(
-                            instrument,
-                            "frequency",
-                            parseInt(e.target.value)
-                          )
-                        }
-                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                      <div className="w-16 text-xs text-gray-600">
-                        {settings.frequency}Hz
-                      </div>
-                    </div>
-
-                    {/* Q (Resonance) Control */}
-                    <div className="flex items-center gap-4">
-                      <div className="w-20 text-xs text-gray-600">
-                        Resonance
-                      </div>
-                      <input
-                        type="range"
-                        min="0.1"
-                        max="10"
-                        step="0.1"
-                        value={settings.Q}
-                        onChange={(e) =>
-                          handleFilterChange(
-                            instrument,
-                            "Q",
-                            parseFloat(e.target.value)
-                          )
-                        }
-                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                      <div className="w-16 text-xs text-gray-600">
-                        {settings.Q.toFixed(1)}
-                      </div>
-                    </div>
-
-                    {/* Filter Type Control */}
-                    <div className="flex items-center gap-4">
-                      <div className="w-20 text-xs text-gray-600">Type</div>
-                      <select
-                        value={settings.type}
-                        onChange={(e) =>
-                          handleFilterChange(
-                            instrument,
-                            "type",
-                            e.target.value as BiquadFilterType
-                          )
-                        }
-                        className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded bg-white"
-                      >
-                        <option value="lowpass">Low Pass</option>
-                        <option value="highpass">High Pass</option>
-                        <option value="bandpass">Band Pass</option>
-                        <option value="notch">Notch</option>
-                        <option value="allpass">All Pass</option>
-                        <option value="peaking">Peaking</option>
-                        <option value="lowshelf">Low Shelf</option>
-                        <option value="highshelf">High Shelf</option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
         </div>
       </div>
 
