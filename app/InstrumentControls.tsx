@@ -156,93 +156,97 @@ export default function InstrumentControls({
       <div className="p-4 border border-white/20 rounded-lg bg-black/40 backdrop-blur-sm">
         <h4 className="text-md font-semibold mb-4 capitalize text-white">{currentInstrument} Controls</h4>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Volume Control */}
-          <div className="space-y-3">
-            <h5 className="text-sm font-medium text-white/90">Volume</h5>
-            <div className="flex items-center gap-4">
-              <input
-                type="range"
-                min="0"
-                max="2"
-                step="0.01"
-                value={volumes[currentInstrument] || 1}
-                onChange={(e) => onVolumeChange(currentInstrument, parseFloat(e.target.value))}
-                className="flex-1 h-2 bg-white/20 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="w-12 text-sm text-white/70">
-                {((volumes[currentInstrument] || 1) * 100).toFixed(0)}%
-              </div>
-            </div>
-          </div>
-
-          {/* Filter Controls */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h5 className="text-sm font-medium text-white/90">Filter</h5>
-              <label className="flex items-center gap-2">
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Volume and Filter */}
+          <div className="space-y-6">
+            {/* Volume Control */}
+            <div className="space-y-3">
+              <h5 className="text-sm font-medium text-white/90">Volume</h5>
+              <div className="flex items-center gap-4">
                 <input
-                  type="checkbox"
-                  checked={currentSettings?.enabled || false}
-                  onChange={(e) => onFilterChange(currentInstrument, "enabled", e.target.checked)}
-                  className="form-checkbox"
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="0.01"
+                  value={volumes[currentInstrument] || 1}
+                  onChange={(e) => onVolumeChange(currentInstrument, parseFloat(e.target.value))}
+                  className="flex-1 h-2 bg-white/20 rounded-lg appearance-none cursor-pointer"
                 />
-                <span className="text-xs text-white/70">Enable</span>
-              </label>
-            </div>
-            
-            {currentSettings?.enabled && (
-              <div className="space-y-2">
-                {/* Frequency */}
-                <div className="flex items-center gap-2">
-                  <div className="w-16 text-xs text-white/70">Freq</div>
-                  <input
-                    type="range"
-                    min="100"
-                    max="20000"
-                    step="100"
-                    value={currentSettings.frequency}
-                    onChange={(e) => onFilterChange(currentInstrument, "frequency", parseInt(e.target.value))}
-                    className="flex-1 h-2 bg-white/20 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <div className="w-16 text-xs text-white/70">{currentSettings.frequency}Hz</div>
+                <div className="w-12 text-sm text-white/70">
+                  {((volumes[currentInstrument] || 1) * 100).toFixed(0)}%
                 </div>
-                
-                {/* Q */}
-                <div className="flex items-center gap-2">
-                  <div className="w-16 text-xs text-white/70">Q</div>
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="10"
-                    step="0.1"
-                    value={currentSettings.Q}
-                    onChange={(e) => onFilterChange(currentInstrument, "Q", parseFloat(e.target.value))}
-                    className="flex-1 h-2 bg-white/20 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <div className="w-16 text-xs text-white/70">{currentSettings.Q.toFixed(1)}</div>
-                </div>
-                
-                {/* Type */}
-                <select
-                  value={currentSettings.type}
-                  onChange={(e) => onFilterChange(currentInstrument, "type", e.target.value as BiquadFilterType)}
-                  className="w-full px-2 py-1 text-xs border border-white/30 rounded bg-black/50 text-white"
-                >
-                  <option value="lowpass">Low Pass</option>
-                  <option value="highpass">High Pass</option>
-                  <option value="bandpass">Band Pass</option>
-                  <option value="notch">Notch</option>
-                  <option value="allpass">All Pass</option>
-                  <option value="peaking">Peaking</option>
-                  <option value="lowshelf">Low Shelf</option>
-                  <option value="highshelf">High Shelf</option>
-                </select>
               </div>
-            )}
+            </div>
+
+            {/* Filter Controls */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h5 className="text-sm font-medium text-white/90">Filter</h5>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={currentSettings?.enabled || false}
+                    onChange={(e) => onFilterChange(currentInstrument, "enabled", e.target.checked)}
+                    className="form-checkbox"
+                  />
+                  <span className="text-xs text-white/70">Enable</span>
+                </label>
+              </div>
+              
+              {currentSettings?.enabled && (
+                <div className="space-y-2">
+                  {/* Frequency */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-12 text-xs text-white/70">Freq</div>
+                    <input
+                      type="range"
+                      min="100"
+                      max="20000"
+                      step="100"
+                      value={currentSettings.frequency}
+                      onChange={(e) => onFilterChange(currentInstrument, "frequency", parseInt(e.target.value))}
+                      className="flex-1 h-2 bg-white/20 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="w-12 text-xs text-white/70">{currentSettings.frequency}Hz</div>
+                  </div>
+                  
+                  {/* Q */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-12 text-xs text-white/70">Q</div>
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="10"
+                      step="0.1"
+                      value={currentSettings.Q}
+                      onChange={(e) => onFilterChange(currentInstrument, "Q", parseFloat(e.target.value))}
+                      className="flex-1 h-2 bg-white/20 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="w-12 text-xs text-white/70">{currentSettings.Q.toFixed(1)}</div>
+                  </div>
+                  
+                  {/* Type */}
+                  <select
+                    value={currentSettings.type}
+                    onChange={(e) => onFilterChange(currentInstrument, "type", e.target.value as BiquadFilterType)}
+                    className="w-full px-2 py-1 text-xs border border-white/30 rounded bg-black/50 text-white"
+                  >
+                    <option value="lowpass">Low Pass</option>
+                    <option value="highpass">High Pass</option>
+                    <option value="bandpass">Band Pass</option>
+                    <option value="notch">Notch</option>
+                    <option value="allpass">All Pass</option>
+                    <option value="peaking">Peaking</option>
+                    <option value="lowshelf">Low Shelf</option>
+                    <option value="highshelf">High Shelf</option>
+                  </select>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Effects Controls */}
+          {/* Right Column - Effects */}
           <div className="space-y-4">
             <h5 className="text-sm font-medium text-white/90">Effects</h5>
             
@@ -264,7 +268,7 @@ export default function InstrumentControls({
               {currentEffects?.overdrive.enabled && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 text-xs text-white/70">Mix</div>
+                    <div className="w-10 text-xs text-white/70">Mix</div>
                     <input
                       type="range"
                       min="0"
@@ -274,12 +278,12 @@ export default function InstrumentControls({
                       onChange={(e) => updateInstrumentOverdrive(currentInstrument, { mix: parseFloat(e.target.value) })}
                       className="flex-1 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
                     />
-                    <div className="w-8 text-xs text-white/70">
+                    <div className="w-10 text-xs text-white/70">
                       {(currentEffects.overdrive.params.mix * 100).toFixed(0)}%
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-8 text-xs text-white/70">Drive</div>
+                    <div className="w-10 text-xs text-white/70">Drive</div>
                     <input
                       type="range"
                       min="0"
@@ -289,12 +293,12 @@ export default function InstrumentControls({
                       onChange={(e) => updateInstrumentOverdrive(currentInstrument, { drive: parseFloat(e.target.value) })}
                       className="flex-1 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
                     />
-                    <div className="w-8 text-xs text-white/70">
+                    <div className="w-10 text-xs text-white/70">
                       {currentEffects.overdrive.params.drive.toFixed(2)}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-8 text-xs text-white/70">Tone</div>
+                    <div className="w-10 text-xs text-white/70">Tone</div>
                     <input
                       type="range"
                       min="100"
@@ -304,7 +308,7 @@ export default function InstrumentControls({
                       onChange={(e) => updateInstrumentOverdrive(currentInstrument, { toneHz: parseInt(e.target.value) })}
                       className="flex-1 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
                     />
-                    <div className="w-8 text-xs text-white/70">
+                    <div className="w-10 text-xs text-white/70">
                       {currentEffects.overdrive.params.toneHz}Hz
                     </div>
                   </div>
@@ -330,7 +334,7 @@ export default function InstrumentControls({
               {currentEffects?.reverb.enabled && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 text-xs text-white/70">Mix</div>
+                    <div className="w-10 text-xs text-white/70">Mix</div>
                     <input
                       type="range"
                       min="0"
@@ -340,12 +344,12 @@ export default function InstrumentControls({
                       onChange={(e) => updateInstrumentReverb(currentInstrument, { mix: parseFloat(e.target.value) })}
                       className="flex-1 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
                     />
-                    <div className="w-8 text-xs text-white/70">
+                    <div className="w-10 text-xs text-white/70">
                       {(currentEffects.reverb.params.mix * 100).toFixed(0)}%
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-8 text-xs text-white/70">Pre</div>
+                    <div className="w-10 text-xs text-white/70">Pre</div>
                     <input
                       type="range"
                       min="0"
@@ -355,7 +359,7 @@ export default function InstrumentControls({
                       onChange={(e) => updateInstrumentReverb(currentInstrument, { preDelayMs: parseInt(e.target.value) })}
                       className="flex-1 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
                     />
-                    <div className="w-8 text-xs text-white/70">
+                    <div className="w-10 text-xs text-white/70">
                       {currentEffects.reverb.params.preDelayMs}ms
                     </div>
                   </div>
