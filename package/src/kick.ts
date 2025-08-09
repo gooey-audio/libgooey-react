@@ -3,17 +3,24 @@ import { Oscillator, OscType } from "./oscillator";
 import { PinkNoise } from "./generators/pink-noise";
 import { FilterConfig } from "./filter";
 import { ADSRConfig } from "./envelope";
+import { OverdriveEffect, OverdriveParams } from "./effects/overdrive";
+import { ConvolverReverbEffect, ReverbParams } from "./effects/reverb";
 
 export interface KickConfig {
   filter?: FilterConfig;
+  clickFilter?: FilterConfig;
   clickEnvelope?: ADSRConfig;
   mainEnvelope?: ADSRConfig;
+  effects?: {
+    overdrive?: Partial<OverdriveParams> & { enabled?: boolean };
+    reverb?: Partial<ReverbParams> & { enabled?: boolean };
+  };
 }
 
 export const makeKick = (
   ctx: AudioContext,
   frequency: number = 60, // Single base frequency for the kick
-  config?: KickConfig,
+  config?: KickConfig
 ) => {
   const inst = new Instrument(ctx);
 
@@ -56,6 +63,24 @@ export const makeKick = (
 
   inst.addGenerator("sine", sineOsc);
   inst.addGenerator("pink", pinkNoise);
+
+  // Optional per-instrument effects
+  if (config?.effects) {
+    if (config.effects.overdrive) {
+      const od = new OverdriveEffect(ctx, config.effects.overdrive);
+      od.setBypassed(!config.effects.overdrive.enabled);
+      inst.addEffect(od);
+    }
+    if (config.effects.reverb) {
+      const rv = new ConvolverReverbEffect(
+        ctx,
+        undefined,
+        config.effects.reverb
+      );
+      rv.setBypassed(!config.effects.reverb.enabled);
+      inst.addEffect(rv);
+    }
+  }
 
   return inst;
 };
