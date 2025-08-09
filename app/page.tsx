@@ -136,19 +136,28 @@ export default function ReactTestPage() {
     property: string,
     value: any
   ) => {
-    setFilterSettings((prev) => ({
-      ...prev,
-      [instrumentName]: {
-        ...prev[instrumentName as keyof typeof prev],
-        [property]: value,
-      },
-    }));
+    setFilterSettings((prev) => {
+      const newSettings = {
+        ...prev,
+        [instrumentName]: {
+          ...prev[instrumentName as keyof typeof prev],
+          [property]: value,
+        },
+      };
 
-    // Update instrument filter settings if sequencer is running
-    if (sequencerRef.current && stage) {
-      const filterConfig = createFilterConfig(instrumentName);
-      stage.setInstrumentFilter(instrumentName, filterConfig);
-    }
+      // Update instrument filter settings immediately if stage exists
+      if (stage) {
+        const instrumentSettings = newSettings[instrumentName as keyof typeof newSettings];
+        const filterConfig = instrumentSettings?.enabled ? {
+          frequency: instrumentSettings.frequency,
+          Q: instrumentSettings.Q,
+          type: instrumentSettings.type,
+        } : undefined;
+        stage.setInstrumentFilter(instrumentName, filterConfig);
+      }
+
+      return newSettings;
+    });
   };
 
   // ==== Effects: state and helpers ====
