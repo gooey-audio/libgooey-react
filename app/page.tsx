@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useLibGooey } from "@/package/src/libgooey";
 import { makeKick } from "@/package/src/kick";
 import { makeSnare } from "@/package/src/snare";
@@ -67,6 +67,30 @@ export default function ReactTestPage() {
     audioContext,
     sequencerRef,
   });
+
+  // Handle spacebar key press to start/stop sequencer
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (event.code === 'Space') {
+        event.preventDefault(); // Prevent default spacebar behavior (page scroll)
+        
+        if (sequencerRef.current) {
+          stopSequencer();
+        } else {
+          startSequencer();
+        }
+      }
+    };
+
+    // Only add event listener if audio is loaded
+    if (isLoaded) {
+      window.addEventListener('keydown', handleKeyPress);
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [isLoaded, sequencerRef.current, startSequencer, stopSequencer]);
 
   const handleInitialize = async () => {
     await initialize();
