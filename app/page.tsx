@@ -68,6 +68,93 @@ export default function ReactTestPage() {
     sequencerRef,
   });
 
+  const startSequencer = () => {
+    const ctx = audioContext;
+
+    if (ctx && stage && !sequencerRef.current) {
+      const startTime = ctx.currentTime;
+
+      // Create instruments without filter configs initially
+      const kick = makeKick(ctx, 100, {
+        effects: {
+          overdrive: {
+            ...overdriveSettings.params,
+            enabled: overdriveSettings.enabled,
+          },
+          reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
+        },
+      });
+      stage.addInstrument("kick", kick);
+
+      const snare = makeSnare(ctx, 400, 800, {
+        decay_time: 0.3,
+        effects: {
+          overdrive: {
+            ...overdriveSettings.params,
+            enabled: overdriveSettings.enabled,
+          },
+          reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
+        },
+      });
+      stage.addInstrument("snare", snare);
+
+      const hat = makeSnare(ctx, 200, 800, {
+        decay_time: 0.1,
+        effects: {
+          overdrive: {
+            ...overdriveSettings.params,
+            enabled: overdriveSettings.enabled,
+          },
+          reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
+        },
+      });
+      stage.addInstrument("hat", hat);
+
+      const pinkHat = makePinkHat(ctx, {
+        decay_time: 0.1,
+        effects: {
+          overdrive: {
+            ...overdriveSettings.params,
+            enabled: overdriveSettings.enabled,
+          },
+          reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
+        },
+      });
+      stage.addInstrument("pinkHat", pinkHat);
+
+      // Apply current filter settings
+      const kickFilter = createFilterConfig("kick");
+      const snareFilter = createFilterConfig("snare");
+      const hatFilter = createFilterConfig("hat");
+
+      stage.setInstrumentFilter("kick", kickFilter);
+      stage.setInstrumentFilter("snare", snareFilter);
+      stage.setInstrumentFilter("hat", hatFilter);
+
+      const sequencer = new Sequencer(ctx, {
+        tempo: 120,
+        stage,
+        // for now lets assume that we'll reference the instruments by name
+        // could make sense to validate that they exist during constructor
+        pattern: patterns,
+      });
+
+      sequencerRef.current = sequencer;
+      sequencer.start();
+
+      // Start beat tracking
+      startBeatTracking();
+    }
+  };
+
+  const stopSequencer = () => {
+    if (sequencerRef.current) {
+      sequencerRef.current.stop();
+      sequencerRef.current = null;
+    }
+    stopBeatTracking();
+  };
+
   // Handle spacebar key press to start/stop sequencer
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
@@ -364,93 +451,6 @@ export default function ReactTestPage() {
 
       console.log("Pink Hat triggered!");
     }
-  };
-
-  const startSequencer = () => {
-    const ctx = audioContext;
-
-    if (ctx && stage && !sequencerRef.current) {
-      const startTime = ctx.currentTime;
-
-      // Create instruments without filter configs initially
-      const kick = makeKick(ctx, 100, {
-        effects: {
-          overdrive: {
-            ...overdriveSettings.params,
-            enabled: overdriveSettings.enabled,
-          },
-          reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
-        },
-      });
-      stage.addInstrument("kick", kick);
-
-      const snare = makeSnare(ctx, 400, 800, {
-        decay_time: 0.3,
-        effects: {
-          overdrive: {
-            ...overdriveSettings.params,
-            enabled: overdriveSettings.enabled,
-          },
-          reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
-        },
-      });
-      stage.addInstrument("snare", snare);
-
-      const hat = makeSnare(ctx, 200, 800, {
-        decay_time: 0.1,
-        effects: {
-          overdrive: {
-            ...overdriveSettings.params,
-            enabled: overdriveSettings.enabled,
-          },
-          reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
-        },
-      });
-      stage.addInstrument("hat", hat);
-
-      const pinkHat = makePinkHat(ctx, {
-        decay_time: 0.1,
-        effects: {
-          overdrive: {
-            ...overdriveSettings.params,
-            enabled: overdriveSettings.enabled,
-          },
-          reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
-        },
-      });
-      stage.addInstrument("pinkHat", pinkHat);
-
-      // Apply current filter settings
-      const kickFilter = createFilterConfig("kick");
-      const snareFilter = createFilterConfig("snare");
-      const hatFilter = createFilterConfig("hat");
-
-      stage.setInstrumentFilter("kick", kickFilter);
-      stage.setInstrumentFilter("snare", snareFilter);
-      stage.setInstrumentFilter("hat", hatFilter);
-
-      const sequencer = new Sequencer(ctx, {
-        tempo: 120,
-        stage,
-        // for now lets assume that we'll reference the instruments by name
-        // could make sense to validate that they exist during constructor
-        pattern: patterns,
-      });
-
-      sequencerRef.current = sequencer;
-      sequencer.start();
-
-      // Start beat tracking
-      startBeatTracking();
-    }
-  };
-
-  const stopSequencer = () => {
-    if (sequencerRef.current) {
-      sequencerRef.current.stop();
-      sequencerRef.current = null;
-    }
-    stopBeatTracking();
   };
 
   const handleRandomizePattern = (instrumentName: string) => {
