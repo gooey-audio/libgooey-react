@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { useLibGooey } from "@/package/src/libgooey";
 import { makeKick } from "@/package/src/kick";
 import { makeSnare } from "@/package/src/snare";
@@ -61,6 +61,8 @@ export default function ReactTestPage() {
     });
 
   const sequencerRef = useRef<Sequencer | null>(null);
+  const [instrumentsLoading, setInstrumentsLoading] = useState(false);
+  const [instrumentsLoaded, setInstrumentsLoaded] = useState(false);
   // Master-level chain removed; effects are applied per-instrument at creation time
 
   const { currentStep, startBeatTracking, stopBeatTracking } = useBeatTracker({
@@ -232,112 +234,147 @@ export default function ReactTestPage() {
     }
   };
 
-  const triggerKick = () => {
-    const ctx = audioContext;
-    if (ctx && stage) {
-      // Create instruments if they don't exist
-      if (!stage.hasInstrument("kick")) {
-        const kick1 = makeKick(ctx, 100, {
-          effects: {
-            overdrive: {
-              ...overdriveSettings.params,
-              enabled: overdriveSettings.enabled,
-            },
-            reverb: {
-              ...reverbSettings.params,
-              enabled: reverbSettings.enabled,
-            },
-          },
-        });
-        stage.addInstrument("kick", kick1);
-      }
+  const createInstruments = useCallback(async () => {
+    if (!audioContext || !stage || instrumentsLoading) return;
+    
+    setInstrumentsLoading(true);
+    setInstrumentsLoaded(false);
 
-      if (!stage.hasInstrument("kick2")) {
-        const kick2 = makeKick(ctx, 500, {
-          effects: {
-            overdrive: {
-              ...overdriveSettings.params,
-              enabled: overdriveSettings.enabled,
-            },
-            reverb: {
-              ...reverbSettings.params,
-              enabled: reverbSettings.enabled,
-            },
+    try {
+      // Create/replace kick instruments
+      const kick1 = makeKick(audioContext, 100, {
+        effects: {
+          overdrive: {
+            ...overdriveSettings.params,
+            enabled: overdriveSettings.enabled,
           },
-        });
-        stage.addInstrument("kick2", kick2);
-      }
+          reverb: {
+            ...reverbSettings.params,
+            enabled: reverbSettings.enabled,
+          },
+        },
+      });
+
+      stage.addInstrument("kick", kick1);
+
+      const kick2 = makeKick(audioContext, 500, {
+        effects: {
+          overdrive: {
+            ...overdriveSettings.params,
+            enabled: overdriveSettings.enabled,
+          },
+          reverb: {
+            ...reverbSettings.params,
+            enabled: reverbSettings.enabled,
+          },
+        },
+      });
+
+      stage.addInstrument("kick2", kick2);
+
+      // Create snare instrument
+      const snare = makeSnare(audioContext, 400, 800, {
+        decay_time: 0.3,
+        effects: {
+          overdrive: {
+            ...overdriveSettings.params,
+            enabled: overdriveSettings.enabled,
+          },
+          reverb: {
+            ...reverbSettings.params,
+            enabled: reverbSettings.enabled,
+          },
+        },
+      });
+
+      stage.addInstrument("snare", snare);
+
+      // Create hat instrument
+      const hat = makeSnare(audioContext, 200, 800, {
+        decay_time: 0.1,
+        effects: {
+          overdrive: {
+            ...overdriveSettings.params,
+            enabled: overdriveSettings.enabled,
+          },
+          reverb: {
+            ...reverbSettings.params,
+            enabled: reverbSettings.enabled,
+          },
+        },
+      });
+
+      stage.addInstrument("hat", hat);
+
+      // Create pink hat instrument
+      const pinkHat = makePinkHat(audioContext, {
+        decay_time: 0.1,
+        effects: {
+          overdrive: {
+            ...overdriveSettings.params,
+            enabled: overdriveSettings.enabled,
+          },
+          reverb: {
+            ...reverbSettings.params,
+            enabled: reverbSettings.enabled,
+          },
+        },
+      });
+      
+      stage.addInstrument("pinkHat", pinkHat);
 
       // Apply current filter settings
-      const filterConfig = createFilterConfig("kick");
-      stage.setInstrumentFilter("kick", filterConfig);
-      stage.setInstrumentFilter("kick2", filterConfig);
+      const kickFilter = createFilterConfig("kick");
+      const snareFilter = createFilterConfig("snare");
+      const hatFilter = createFilterConfig("hat");
+      const pinkHatFilter = createFilterConfig("pinkHat");
 
-      // TODO
-      // allow trigger of n names
+      stage.setInstrumentFilter("kick", kickFilter);
+      stage.setInstrumentFilter("kick2", kickFilter);
+      stage.setInstrumentFilter("snare", snareFilter);
+      stage.setInstrumentFilter("hat", hatFilter);
+      stage.setInstrumentFilter("pinkHat", pinkHatFilter);
+
+      // Apply current volume settings
+      stage.setInstrumentVolume("kick", volumes.kick);
+      stage.setInstrumentVolume("snare", volumes.snare);
+      stage.setInstrumentVolume("hat", volumes.hat);
+      stage.setInstrumentVolume("pinkHat", volumes.pinkHat);
+      stage.setMainVolume(volumes.master);
+
+      setInstrumentsLoaded(true);
+    } catch (error) {
+      console.error("Failed to create instruments:", error);
+    } finally {
+      setInstrumentsLoading(false);
+    }
+  }, [audioContext, stage, overdriveSettings, reverbSettings, volumes, instrumentsLoading]);
+
+  // Effect to create instruments when audio context is ready and on hot reload
+  useEffect(() => {
+    if (isLoaded && !instrumentsLoaded && !instrumentsLoading) {
+      createInstruments();
+    }
+  }, [isLoaded, createInstruments, instrumentsLoaded, instrumentsLoading]);
+
+  const triggerKick = () => {
+    if (stage && instrumentsLoaded) {
       stage.trigger("kick");
       stage.trigger("kick2");
-
       console.log("Kick triggered!");
     }
   };
 
   const triggerSnare = () => {
-    const ctx = audioContext;
-    if (ctx && stage) {
-      // Create instrument if it doesn't exist
-      if (!stage.hasInstrument("snare")) {
-        const snare1 = makeSnare(ctx, 200, 800, {
-          decay_time: 0.3,
-          effects: {
-            overdrive: {
-              ...overdriveSettings.params,
-              enabled: overdriveSettings.enabled,
-            },
-            reverb: {
-              ...reverbSettings.params,
-              enabled: reverbSettings.enabled,
-            },
-          },
-        });
-        stage.addInstrument("snare", snare1);
-      }
-
-      // Apply current filter settings
-      const filterConfig = createFilterConfig("snare");
-      stage.setInstrumentFilter("snare", filterConfig);
-
-      // TODO
-      // allow trigger of n names
+    if (stage && instrumentsLoaded) {
       stage.trigger("snare");
+      console.log("Snare triggered!");
     }
   };
 
   const triggerPinkHat = () => {
-    const ctx = audioContext;
-    if (ctx && stage) {
-      // Create instrument if it doesn't exist
-      if (!stage.hasInstrument("pinkHat")) {
-        const pinkHat1 = makePinkHat(ctx, {
-          decay_time: 0.12,
-          effects: {
-            overdrive: {
-              ...overdriveSettings.params,
-              enabled: overdriveSettings.enabled,
-            },
-            reverb: {
-              ...reverbSettings.params,
-              enabled: reverbSettings.enabled,
-            },
-          },
-        });
-        stage.addInstrument("pinkHat", pinkHat1);
-      }
-
-      // TODO
-      // allow trigger of n names
+    if (stage && instrumentsLoaded) {
       stage.trigger("pinkHat");
-
       console.log("Pink Hat triggered!");
     }
   };
@@ -345,66 +382,7 @@ export default function ReactTestPage() {
   const startSequencer = () => {
     const ctx = audioContext;
 
-    if (ctx && stage && !sequencerRef.current) {
-      const startTime = ctx.currentTime;
-
-      // Create instruments without filter configs initially
-      const kick = makeKick(ctx, 100, {
-        effects: {
-          overdrive: {
-            ...overdriveSettings.params,
-            enabled: overdriveSettings.enabled,
-          },
-          reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
-        },
-      });
-      stage.addInstrument("kick", kick);
-
-      const snare = makeSnare(ctx, 400, 800, {
-        decay_time: 0.3,
-        effects: {
-          overdrive: {
-            ...overdriveSettings.params,
-            enabled: overdriveSettings.enabled,
-          },
-          reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
-        },
-      });
-      stage.addInstrument("snare", snare);
-
-      const hat = makeSnare(ctx, 200, 800, {
-        decay_time: 0.1,
-        effects: {
-          overdrive: {
-            ...overdriveSettings.params,
-            enabled: overdriveSettings.enabled,
-          },
-          reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
-        },
-      });
-      stage.addInstrument("hat", hat);
-
-      const pinkHat = makePinkHat(ctx, {
-        decay_time: 0.1,
-        effects: {
-          overdrive: {
-            ...overdriveSettings.params,
-            enabled: overdriveSettings.enabled,
-          },
-          reverb: { ...reverbSettings.params, enabled: reverbSettings.enabled },
-        },
-      });
-      stage.addInstrument("pinkHat", pinkHat);
-
-      // Apply current filter settings
-      const kickFilter = createFilterConfig("kick");
-      const snareFilter = createFilterConfig("snare");
-      const hatFilter = createFilterConfig("hat");
-
-      stage.setInstrumentFilter("kick", kickFilter);
-      stage.setInstrumentFilter("snare", snareFilter);
-      stage.setInstrumentFilter("hat", hatFilter);
-
+    if (ctx && stage && !sequencerRef.current && instrumentsLoaded) {
       const sequencer = new Sequencer(ctx, {
         tempo: 120,
         stage,
@@ -446,11 +424,13 @@ export default function ReactTestPage() {
     });
   };
 
-  if (isLoading) {
+  if (isLoading || instrumentsLoading) {
     return (
       <div className="p-8">
         <h1 className="text-2xl font-bold mb-4">LibGooey React Hook Test</h1>
-        <div className="text-lg">Loading audio engine...</div>
+        <div className="text-lg">
+          {isLoading ? "Loading audio engine..." : "Loading instruments..."}
+        </div>
       </div>
     );
   }
@@ -464,17 +444,23 @@ export default function ReactTestPage() {
     );
   }
 
-  if (!isLoaded) {
+  if (!isLoaded || !instrumentsLoaded) {
     return (
       <div className="p-8">
         <h1 className="text-2xl font-bold mb-4">LibGooey React Hook Test</h1>
-        <p className="mb-4">Click to initialize the audio engine:</p>
-        <button
-          onClick={handleInitialize}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Initialize Audio
-        </button>
+        {!isLoaded ? (
+          <>
+            <p className="mb-4">Click to initialize the audio engine:</p>
+            <button
+              onClick={handleInitialize}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Initialize Audio
+            </button>
+          </>
+        ) : (
+          <div className="text-lg">Instruments are loading...</div>
+        )}
       </div>
     );
   }
@@ -485,7 +471,7 @@ export default function ReactTestPage() {
     <div className="p-8 max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">LibGooey React Hook Test</h1>
       <p className="text-green-600 mb-6">
-        ✅ Audio engine loaded successfully!
+        ✅ Audio engine and instruments loaded successfully!
       </p>
 
       <div className="flex gap-4 mb-6">
