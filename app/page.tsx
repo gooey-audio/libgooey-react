@@ -426,7 +426,18 @@ export default function ReactTestPage() {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       // Only trigger on spacebar and when not typing in an input field
-      if (event.code === 'Space' && event.target === document.body) {
+      if (event.code === 'Space') {
+        const target = event.target as HTMLElement;
+        
+        // Avoid triggering when user is typing in input fields, textareas, or contenteditable elements
+        if (target && (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.contentEditable === 'true'
+        )) {
+          return;
+        }
+        
         event.preventDefault(); // Prevent page scroll
         
         if (sequencerRef.current) {
