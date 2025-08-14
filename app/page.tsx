@@ -149,12 +149,15 @@ export default function ReactTestPage() {
 
       // Update instrument filter settings immediately if stage exists
       if (stage) {
-        const instrumentSettings = newSettings[instrumentName as keyof typeof newSettings];
-        const filterConfig = instrumentSettings?.enabled ? {
-          frequency: instrumentSettings.frequency,
-          Q: instrumentSettings.Q,
-          type: instrumentSettings.type,
-        } : undefined;
+        const instrumentSettings =
+          newSettings[instrumentName as keyof typeof newSettings];
+        const filterConfig = instrumentSettings?.enabled
+          ? {
+              frequency: instrumentSettings.frequency,
+              Q: instrumentSettings.Q,
+              type: instrumentSettings.type,
+            }
+          : undefined;
         stage.setInstrumentFilter(instrumentName, filterConfig);
       }
 
@@ -187,7 +190,7 @@ export default function ReactTestPage() {
       setOverdriveSettings((prev) => ({ ...prev, enabled }));
       // Propagate bypass to existing instruments
       if (stage) {
-        ["kick", "kick2", "snare", "hat", "pinkHat"].forEach((name) =>
+        ["kick", "snare", "hat", "pinkHat"].forEach((name) =>
           stage.setInstrumentEffectBypassed(name, "Overdrive", !enabled)
         );
       }
@@ -203,7 +206,7 @@ export default function ReactTestPage() {
         ...overdriveSettings.params,
         ...updates,
       };
-      ["kick", "kick2", "snare", "hat", "pinkHat"].forEach((name) =>
+      ["kick", "snare", "hat", "pinkHat"].forEach((name) =>
         stage.updateInstrumentEffect(name, "Overdrive", params)
       );
     }
@@ -216,7 +219,7 @@ export default function ReactTestPage() {
       const enabled = updates.enabled;
       setReverbSettings((prev) => ({ ...prev, enabled }));
       if (stage) {
-        ["kick", "kick2", "snare", "hat", "pinkHat"].forEach((name) =>
+        ["kick", "snare", "hat", "pinkHat"].forEach((name) =>
           stage.setInstrumentEffectBypassed(name, "Reverb", !enabled)
         );
       }
@@ -228,7 +231,7 @@ export default function ReactTestPage() {
     }));
     if (stage) {
       const params: ReverbParams = { ...reverbSettings.params, ...updates };
-      ["kick", "kick2", "snare", "hat", "pinkHat"].forEach((name) =>
+      ["kick", "snare", "hat", "pinkHat"].forEach((name) =>
         stage.updateInstrumentEffect(name, "Reverb", params)
       );
     }
@@ -236,7 +239,7 @@ export default function ReactTestPage() {
 
   const createInstruments = useCallback(async () => {
     if (!audioContext || !stage || instrumentsLoading) return;
-    
+
     setInstrumentsLoading(true);
     setInstrumentsLoaded(false);
 
@@ -256,21 +259,6 @@ export default function ReactTestPage() {
       });
 
       stage.addInstrument("kick", kick1);
-
-      const kick2 = makeKick(audioContext, 500, {
-        effects: {
-          overdrive: {
-            ...overdriveSettings.params,
-            enabled: overdriveSettings.enabled,
-          },
-          reverb: {
-            ...reverbSettings.params,
-            enabled: reverbSettings.enabled,
-          },
-        },
-      });
-
-      stage.addInstrument("kick2", kick2);
 
       // Create snare instrument
       const snare = makeSnare(audioContext, 400, 800, {
@@ -320,7 +308,7 @@ export default function ReactTestPage() {
           },
         },
       });
-      
+
       stage.addInstrument("pinkHat", pinkHat);
 
       // Apply current filter settings
@@ -330,7 +318,6 @@ export default function ReactTestPage() {
       const pinkHatFilter = createFilterConfig("pinkHat");
 
       stage.setInstrumentFilter("kick", kickFilter);
-      stage.setInstrumentFilter("kick2", kickFilter);
       stage.setInstrumentFilter("snare", snareFilter);
       stage.setInstrumentFilter("hat", hatFilter);
       stage.setInstrumentFilter("pinkHat", pinkHatFilter);
@@ -348,7 +335,17 @@ export default function ReactTestPage() {
     } finally {
       setInstrumentsLoading(false);
     }
-  }, [audioContext, stage, overdriveSettings, reverbSettings, volumes, instrumentsLoading]);
+  }, [
+    audioContext,
+    stage,
+    overdriveSettings,
+    reverbSettings,
+    volumes,
+    instrumentsLoading,
+    makeKick,
+    makeSnare,
+    makePinkHat,
+  ]);
 
   // Effect to create instruments when audio context is ready and on hot reload
   useEffect(() => {
@@ -360,7 +357,6 @@ export default function ReactTestPage() {
   const triggerKick = () => {
     if (stage && instrumentsLoaded) {
       stage.trigger("kick");
-      stage.trigger("kick2");
       console.log("Kick triggered!");
     }
   };

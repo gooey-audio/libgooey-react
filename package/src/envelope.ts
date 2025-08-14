@@ -3,6 +3,9 @@ export interface ADSRConfig {
   decay: number; // Decay time in seconds
   sustain: number; // Sustain level (0-1)
   release: number; // Release time in seconds
+  peak?: number; // Optional peak value for pitch/filter envelopes
+  end?: number; // Optional end value for pitch/filter envelopes
+  curve?: number; // Optional curve for exponential ramps
 }
 
 export class Envelope {
@@ -54,27 +57,37 @@ export class Envelope {
   applyToPitch(
     oscillator: OscillatorNode,
     baseFrequency: number,
-    pitchRange: number = 1.0,
+    // pitchRange: number = 1.0,
     startTime: number = this.ctx.currentTime,
     noteLength?: number,
   ) {
-    const { attack, decay, sustain, release } = this.config;
+    const { attack, decay, sustain, release, peak, end, curve } = this.config;
     const frequency = oscillator.frequency;
 
-    // Start at base frequency + pitch range (high pitch)
-    const startFreq = baseFrequency + baseFrequency * pitchRange;
-    const sustainFreq = baseFrequency + baseFrequency * pitchRange * sustain;
+    const startFreq = peak !== undefined ? peak : baseFrequency; // Use peak if provided, else baseFrequency
+    const endFreq = end !== undefined ? end : baseFrequency; // Use end if provided, else baseFrequency
 
+    console.log('Pitch envelope:', { startFreq, endFreq, attack, decay, curve, startTime });
+
+    // Set initial frequency
     frequency.setValueAtTime(startFreq, startTime);
 
-    // Attack phase: stay at high pitch
-    frequency.linearRampToValueAtTime(startFreq, startTime + attack);
+    // Attack phase: stay at startFreq (no ramp needed since we start there)
+    // frequency.linearRampToValueAtTime(startFreq, startTime + attack);
 
-    // Decay phase: drop to sustain frequency
-    frequency.exponentialRampToValueAtTime(
-      Math.max(sustainFreq, baseFrequency * 0.1), // Ensure frequency doesn't go too low
-      startTime + attack + decay,
-    );
+    // Decay phase: ramp to endFreq
+    if (curve !== undefined) {
+      // Use setTargetAtTime with proper time constant
+      const timeConstant = Math.abs(curve);
+      frequency.setTargetAtTime(endFreq, startTime + attack, timeConstant);
+      console.log('Using setTargetAtTime:', { endFreq, timeConstant, targetTime: startTime + attack });
+    } else {
+      frequency.exponentialRampToValueAtTime(
+        Math.max(endFreq, baseFrequency * 0.1), // Ensure frequency doesn't go too low
+        startTime + attack + decay,
+      );
+      console.log('Using exponentialRampToValueAtTime:', { endFreq, targetTime: startTime + attack + decay });
+    }
 
     // If sustain is 0 (like drums), start release immediately after decay
     // Otherwise, sustain until note release
@@ -84,9 +97,9 @@ export class Envelope {
           ? startTime + noteLength
           : startTime + attack + decay;
 
-      // Release phase: return to base frequency
+      // Release phase: return to end frequency
       frequency.exponentialRampToValueAtTime(
-        baseFrequency,
+        endFreq,
         releaseStart + release,
       );
     }

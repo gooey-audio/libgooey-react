@@ -30,15 +30,16 @@ export class Oscillator {
 
     // TODO
     // find better enum enforcement
-    if ((this.type = OscType.Sine)) {
+    if (this.type === OscType.Sine) {
       osc.type = "sine";
     }
 
-    if ((this.type = OscType.Triangle)) {
+    if (this.type === OscType.Triangle) {
       osc.type = "triangle";
     }
 
-    osc.frequency.setValueAtTime(this.baseFrequency, now);
+    // Don't set initial frequency here - let the pitch envelope control it
+    // osc.frequency.setValueAtTime(this.baseFrequency, now);
     gain.gain.setValueAtTime(0, now); // Start from silence, envelope will control volume
 
     // Set up signal chain: osc -> [filter] -> gain -> destination
@@ -86,6 +87,12 @@ export class Oscillator {
   // allows us to trigger many instances during sequencer lookahead
   start(time: number, destination?: AudioNode) {
     const { osc, gain } = this.makeOscillator(destination, time);
+
+    // Apply pitch envelope if one is set (before starting oscillator)
+    if (this.pitchEnvelope) {
+      this.pitchEnvelope.applyToPitch(osc, this.baseFrequency, time);
+    }
+
     osc.start(time);
 
     // Apply envelope if one is set
@@ -95,11 +102,6 @@ export class Oscillator {
       // Fallback to default envelope, not sure we want this for non-trigger types
       gain.gain.setValueAtTime(1, time);
       gain.gain.exponentialRampToValueAtTime(0.001, time + 0.2);
-    }
-
-    // Apply pitch envelope if one is set
-    if (this.pitchEnvelope) {
-      this.pitchEnvelope.applyToPitch(osc, this.baseFrequency, 0.5, time); // 50% pitch range for nice effect
     }
 
     return osc;
