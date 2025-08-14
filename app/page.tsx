@@ -420,6 +420,41 @@ export default function ReactTestPage() {
     });
   };
 
+  // Spacebar key handler for start/stop sequencer
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only trigger on spacebar and when not typing in an input field
+      if (event.code === 'Space') {
+        const target = event.target as HTMLElement;
+        
+        // Avoid triggering when user is typing in input fields, textareas, or contenteditable elements
+        if (target && (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.contentEditable === 'true'
+        )) {
+          return;
+        }
+        
+        event.preventDefault(); // Prevent page scroll
+        
+        if (sequencerRef.current) {
+          stopSequencer();
+        } else {
+          startSequencer();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isLoaded, sequencerRef]);
+
   if (isLoading || instrumentsLoading) {
     return (
       <div className="p-8">
