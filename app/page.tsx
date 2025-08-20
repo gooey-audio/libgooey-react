@@ -375,10 +375,11 @@ export default function ReactTestPage() {
     }
   };
 
-  const startSequencer = () => {
+  const startSequencer = useCallback(() => {
     const ctx = audioContext;
 
     if (ctx && stage && !sequencerRef.current && instrumentsLoaded) {
+      console.log('Creating sequencer with patterns:', patterns);
       const sequencer = new Sequencer(ctx, {
         tempo: 120,
         stage,
@@ -392,16 +393,20 @@ export default function ReactTestPage() {
 
       // Start beat tracking
       startBeatTracking();
+      console.log('Sequencer started');
+    } else {
+      console.log('Cannot start sequencer:', { ctx, stage, currentSequencer: sequencerRef.current, instrumentsLoaded });
     }
-  };
+  }, [audioContext, stage, instrumentsLoaded, patterns, startBeatTracking]);
 
-  const stopSequencer = () => {
+  const stopSequencer = useCallback(() => {
     if (sequencerRef.current) {
+      console.log('Stopping sequencer');
       sequencerRef.current.stop();
       sequencerRef.current = null;
     }
     stopBeatTracking();
-  };
+  }, [stopBeatTracking]);
 
   const handleRandomizePattern = (instrumentName: string) => {
     setPatterns((prev) => {
@@ -419,6 +424,45 @@ export default function ReactTestPage() {
       return newPatterns;
     });
   };
+
+  // Spacebar key handler for start/stop sequencer
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only trigger on spacebar and when not typing in an input field
+      if (event.code === 'Space') {
+        const target = event.target as HTMLElement;
+        
+        // Avoid triggering when user is typing in input fields, textareas, or contenteditable elements
+        if (target && (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.contentEditable === 'true'
+        )) {
+          return;
+        }
+        
+        event.preventDefault(); // Prevent page scroll
+        
+        console.log('Spacebar pressed, sequencerRef.current:', sequencerRef.current);
+        
+        if (sequencerRef.current) {
+          console.log('Stopping sequencer');
+          stopSequencer();
+        } else {
+          console.log('Starting sequencer');
+          startSequencer();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isLoaded, startSequencer, stopSequencer]);
 
   if (isLoading || instrumentsLoading) {
     return (
