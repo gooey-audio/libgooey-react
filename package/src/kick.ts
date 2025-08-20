@@ -19,18 +19,18 @@ export interface KickConfig {
 
 export const makeKick = (
   ctx: AudioContext,
-  frequency: number = 60, // Single base frequency for the kick
-  config?: KickConfig
+  frequency: number = 50, // Lower frequency for better low-end thump
+  config?: KickConfig,
 ) => {
   const inst = new Instrument(ctx);
 
   // Create sine wave oscillator for the kick body
   const sineOsc = new Oscillator(ctx, frequency, OscType.Sine);
 
-  // Fast "click" envelope for the sine wave (Attack: 0-1ms, Decay: 5-20ms, Sustain: 0%, Release: 0ms)
+  // Low thump envelope for the sine wave - longer than click but shorter than main envelope
   const clickEnvelope: ADSRConfig = config?.clickEnvelope || {
-    attack: 0.001, // 1ms attack
-    decay: 0.1, // 10ms decay (between 5-20ms range)
+    attack: 0.002, // 2ms attack for smooth onset
+    decay: 0.08, // 80ms decay for low-end thump (longer than click, shorter than noise)
     sustain: 0, // 0% sustain
     release: 0, // 0ms release
   };
@@ -43,7 +43,7 @@ export const makeKick = (
   // Main envelope for combined signal (Attack: 0.5-400ms, Decay: 0.5-4000ms, Sustain: 0%, Release: 0ms)
   const mainEnvelope: ADSRConfig = config?.mainEnvelope || {
     attack: 0.002, // 2ms attack (within 0.5-400ms range)
-    decay: 0.15, 
+    decay: 0.15,
     sustain: 0, // 0% sustain
     release: 0, // 0ms release
   };
@@ -78,7 +78,7 @@ export const makeKick = (
       const rv = new ConvolverReverbEffect(
         ctx,
         undefined,
-        config.effects.reverb
+        config.effects.reverb,
       );
       rv.setBypassed(!config.effects.reverb.enabled);
       inst.addEffect(rv);

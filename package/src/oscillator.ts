@@ -38,8 +38,8 @@ export class Oscillator {
       osc.type = "triangle";
     }
 
-    // Don't set initial frequency here - let the pitch envelope control it
-    // osc.frequency.setValueAtTime(this.baseFrequency, now);
+    // Set initial frequency - pitch envelope will override if present
+    osc.frequency.setValueAtTime(this.baseFrequency, now);
     gain.gain.setValueAtTime(0, now); // Start from silence, envelope will control volume
 
     // Set up signal chain: osc -> [filter] -> gain -> destination
