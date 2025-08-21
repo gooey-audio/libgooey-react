@@ -24,14 +24,14 @@ export default function SpectrogramDisplay({
 
   // Initialize spectrogram
   useEffect(() => {
-    if (!analyser || !canvasRef.current) return;
+    if (!analyser || !canvasRef.current || !audioContext) return;
 
     const initSpectrogram = async () => {
       try {
         const spectrogramModule = await import("spectrogram");
         const Spectrogram = spectrogramModule.default || spectrogramModule;
 
-        if (!canvasRef.current) return
+        if (!canvasRef.current) return;
 
         const spectrogram = new Spectrogram(canvasRef.current, {
           audio: {
@@ -51,93 +51,34 @@ export default function SpectrogramDisplay({
           },
         });
 
-        // Connect the analyser node to the spectrogram
+        // Try to connect the analyser node to the spectrogram
         try {
-          spectrogram.connectSource(analyser as any);
-          console.log("Spectrogram connected to analyser successfully");
-          setSpectrogramInstance(spectrogram);
+          // The spectrogram library expects either a MediaStream or Audio element
+          // Since we have an AnalyserNode, we'll always fall back to manual mode
+          console.log("Spectrogram library loaded, but using manual mode for AnalyserNode compatibility");
+          setSpectrogramInstance(null); // Force manual mode
         } catch (connectError) {
           console.error("Failed to connect spectrogram to analyser:", connectError);
-          // Fall back to manual mode
           setSpectrogramInstance(null);
         }
       } catch (error) {
         console.error("Failed to initialize spectrogram:", error);
-        // Fall back to manual drawing mode
         console.log("Using manual spectrogram drawing mode");
+        setSpectrogramInstance(null);
       }
     };
 
     initSpectrogram();
-  }, [analyser]);
+  }, [analyser, audioContext]);
 
-  // Animation loop for updating the spectrogram
+  // Initialize canvas when component mounts or dimensions change
   useEffect(() => {
-    console.log("Spectrogram effect - isActive:", isActive, "analyser:", !!analyser, "spectrogramInstance:", !!spectrogramInstance);
-    
-    if (!isActive || !analyser) {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-      // Stop the spectrogram when inactive
-      if (spectrogramInstance) {
-        try {
-          spectrogramInstance.stop();
-        } catch (error) {
-          console.error("Error stopping spectrogram:", error);
-        }
-      }
-      return;
-    }
+    initializeCanvas();
+  }, [initializeCanvas]);
 
-    // Start the spectrogram when active
-    if (spectrogramInstance) {
-      try {
-        spectrogramInstance.start();
-      } catch (error) {
-        console.error("Error starting spectrogram:", error);
-        // Fall back to manual drawing
-        startManualSpectrogram();
-      }
-    } else {
-      // Use manual drawing when spectrogram library is not available
-      startManualSpectrogram();
-    }
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      if (spectrogramInstance) {
-        try {
-          spectrogramInstance.stop();
-        } catch (error) {
-          console.error("Error stopping spectrogram:", error);
-        }
-      }
-    };
-  }, [isActive, analyser, spectrogramInstance, width]);
-
-  // Cleanup effect
-  useEffect(() => {
-    return () => {
-      if (spectrogramInstance) {
-        try {
-          spectrogramInstance.stop();
-        } catch (error) {
-          console.error("Error stopping spectrogram on cleanup:", error);
-        }
-      }
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [spectrogramInstance]);
-
-  // Manual spectrogram animation loop
-  const startManualSpectrogram = () => {
-    if (!isActive || !analyser) return;
+  // Manual spectrogram animation loop function - defined outside useEffect to avoid recreating
+  const startManualSpectrogram = React.useCallback(() => {
+    if (!isActive || !analyser || !audioContext) return;
     
     console.log("Starting manual spectrogram mode");
 
@@ -180,10 +121,70 @@ export default function SpectrogramDisplay({
     }
 
     updateManualSpectrogram();
-  };
+  }, [isActive, analyser, audioContext, width, height]);
 
-  // Manual spectrogram drawing as fallback
-  const drawManualSpectrogram = (frequencyData: number[]) => {
+  // Animation loop for updating the spectrogram
+  useEffect(() => {
+    console.log("Spectrogram effect - isActive:", isActive, "analyser:", !!analyser, "audioContext state:", audioContext?.state);
+    
+    if (!isActive || !analyser || !audioContext || audioContext.state !== 'running') {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      // Stop the spectrogram when inactive
+      if (spectrogramInstance) {
+        try {
+          spectrogramInstance.stop();
+        } catch (error) {
+          console.error("Error stopping spectrogram:", error);
+        }
+      }
+      return;
+    }
+
+    // Always use manual drawing for AnalyserNode compatibility
+    startManualSpectrogram();
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    };
+  }, [isActive, analyser, audioContext, startManualSpectrogram]);
+
+  // Cleanup effect
+  useEffect(() => {
+    return () => {
+      if (spectrogramInstance) {
+        try {
+          spectrogramInstance.stop();
+        } catch (error) {
+          console.error("Error stopping spectrogram on cleanup:", error);
+        }
+      }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [spectrogramInstance]);
+
+  // Initialize canvas with clear background
+  const initializeCanvas = React.useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Clear the entire canvas with dark background
+    ctx.fillStyle = '#1F2937'; // Dark gray background
+    ctx.fillRect(0, 0, width, height);
+  }, [width, height]);
+
+  // Manual spectrogram drawing function
+  const drawManualSpectrogram = React.useCallback((frequencyData: number[]) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -194,6 +195,10 @@ export default function SpectrogramDisplay({
     const imageData = ctx.getImageData(1, 0, width - 1, height);
     ctx.putImageData(imageData, 0, 0);
 
+    // Clear the rightmost column
+    ctx.fillStyle = '#1F2937';
+    ctx.fillRect(width - 1, 0, 1, height);
+
     // Draw new frequency data as a vertical line on the right
     const sliceWidth = 1;
     const x = width - sliceWidth;
@@ -202,15 +207,19 @@ export default function SpectrogramDisplay({
       const y = height - (i / frequencyData.length) * height;
       const intensity = frequencyData[i];
 
-      // Color based on intensity
-      const hue = (1 - intensity) * 240; // Blue to red
-      const saturation = 80;
-      const lightness = 20 + intensity * 60;
+      // Only draw if there's some intensity
+      if (intensity > 0.001) {
+        // Color based on intensity
+        const hue = (1 - intensity) * 240; // Blue to red
+        const saturation = 80;
+        const lightness = 20 + intensity * 60;
 
-      ctx.fillStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-      ctx.fillRect(x, y, sliceWidth, height / frequencyData.length);
+        ctx.fillStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+        ctx.fillRect(x, y, sliceWidth, height / frequencyData.length);
+      }
     }
-  };
+  }, [width, height]);
+
 
   return (
     <div className="spectrogram-container bg-gray-800 p-4 rounded-lg border border-gray-600">

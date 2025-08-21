@@ -373,31 +373,49 @@ export default function ReactTestPage() {
     }
   }, [isLoaded, createInstruments, instrumentsLoaded, instrumentsLoading]);
 
-  const triggerKick = () => {
-    if (stage && instrumentsLoaded) {
+  const triggerKick = async () => {
+    if (stage && instrumentsLoaded && audioContext) {
+      // Ensure audio context is running
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
       stage.trigger("kick");
       console.log("Kick triggered!");
     }
   };
 
-  const triggerSnare = () => {
-    if (stage && instrumentsLoaded) {
+  const triggerSnare = async () => {
+    if (stage && instrumentsLoaded && audioContext) {
+      // Ensure audio context is running
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
       stage.trigger("snare");
       console.log("Snare triggered!");
     }
   };
 
-  const triggerPinkHat = () => {
-    if (stage && instrumentsLoaded) {
+  const triggerPinkHat = async () => {
+    if (stage && instrumentsLoaded && audioContext) {
+      // Ensure audio context is running
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
       stage.trigger("pinkHat");
       console.log("Pink Hat triggered!");
     }
   };
 
-  const startSequencer = () => {
+  const startSequencer = async () => {
     const ctx = audioContext;
 
     if (ctx && stage && !sequencerRef.current && instrumentsLoaded) {
+      // Ensure audio context is running - required in modern browsers
+      if (ctx.state === 'suspended') {
+        console.log('Resuming audio context...');
+        await ctx.resume();
+      }
+      
       const sequencer = new Sequencer(ctx, {
         tempo: 120,
         stage,
@@ -412,6 +430,8 @@ export default function ReactTestPage() {
       // Start beat tracking
       startBeatTracking();
       setIsSequencerRunning(true);
+      
+      console.log('Sequencer started, audio context state:', ctx.state);
     }
   };
 
