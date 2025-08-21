@@ -52,8 +52,15 @@ export default function SpectrogramDisplay({
         });
 
         // Connect the analyser node to the spectrogram
-        spectrogram.connectSource(analyser as any);
-        setSpectrogramInstance(spectrogram);
+        try {
+          spectrogram.connectSource(analyser as any);
+          console.log("Spectrogram connected to analyser successfully");
+          setSpectrogramInstance(spectrogram);
+        } catch (connectError) {
+          console.error("Failed to connect spectrogram to analyser:", connectError);
+          // Fall back to manual mode
+          setSpectrogramInstance(null);
+        }
       } catch (error) {
         console.error("Failed to initialize spectrogram:", error);
         // Fall back to manual drawing mode
@@ -66,6 +73,8 @@ export default function SpectrogramDisplay({
 
   // Animation loop for updating the spectrogram
   useEffect(() => {
+    console.log("Spectrogram effect - isActive:", isActive, "analyser:", !!analyser, "spectrogramInstance:", !!spectrogramInstance);
+    
     if (!isActive || !analyser) {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -129,9 +138,12 @@ export default function SpectrogramDisplay({
   // Manual spectrogram animation loop
   const startManualSpectrogram = () => {
     if (!isActive || !analyser) return;
+    
+    console.log("Starting manual spectrogram mode");
 
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
+    let frameCount = 0;
 
     function updateManualSpectrogram() {
       if (!analyser || !isActive) return;
@@ -141,6 +153,14 @@ export default function SpectrogramDisplay({
 
       // Convert to array of numbers normalized to 0-1 range
       const normalizedData = Array.from(dataArray).map((value) => value / 255);
+      
+      // Debug log every 60 frames (roughly once per second at 60fps)
+      if (frameCount % 60 === 0) {
+        const maxValue = Math.max(...normalizedData);
+        const avgValue = normalizedData.reduce((a, b) => a + b, 0) / normalizedData.length;
+        console.log(`Manual spectrogram frame ${frameCount}: max=${maxValue.toFixed(3)}, avg=${avgValue.toFixed(3)}, bufferLength=${bufferLength}`);
+      }
+      frameCount++;
 
       // Add new data to spectrogram
       spectrogramDataRef.current.push(normalizedData);

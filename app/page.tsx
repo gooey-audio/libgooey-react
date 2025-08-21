@@ -337,9 +337,15 @@ export default function ReactTestPage() {
       analyserNode.fftSize = 2048;
       analyserNode.smoothingTimeConstant = 0.0;
 
-      // Tap the stage's main output into the analyser without altering routing
+      // Insert analyser node in the audio chain properly
       const mainOutput = stage.getMainOutput();
+      
+      // Disconnect the current connection to destination
+      mainOutput.disconnect();
+      
+      // Connect: mainOutput -> analyser -> destination
       mainOutput.connect(analyserNode);
+      analyserNode.connect(audioContext.destination);
 
       setAnalyser(analyserNode);
       setInstrumentsLoaded(true);
