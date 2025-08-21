@@ -11,6 +11,7 @@ import { FilterConfig } from "@/package/src/filter";
 import { OverdriveParams } from "@/package/src/effects/overdrive";
 import { ReverbParams } from "@/package/src/effects/reverb";
 import InstrumentControls from "./InstrumentControls";
+import SpectrogramDisplay from "./SpectrogramDisplay";
 
 export default function ReactTestPage() {
   const [patterns, setPatterns] = useState({
@@ -63,6 +64,7 @@ export default function ReactTestPage() {
   const sequencerRef = useRef<Sequencer | null>(null);
   const [instrumentsLoading, setInstrumentsLoading] = useState(false);
   const [instrumentsLoaded, setInstrumentsLoaded] = useState(false);
+  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
   // Master-level chain removed; effects are applied per-instrument at creation time
 
   const { currentStep, startBeatTracking, stopBeatTracking } = useBeatTracker({
@@ -329,6 +331,18 @@ export default function ReactTestPage() {
       stage.setInstrumentVolume("pinkHat", volumes.pinkHat);
       stage.setMainVolume(volumes.master);
 
+      // Create and connect analyser node for spectrogram
+      const analyserNode = audioContext.createAnalyser();
+      analyserNode.fftSize = 2048;
+      analyserNode.smoothingTimeConstant = 0.8;
+      
+      // Connect the stage's main output to the analyser, then to destination
+      const mainOutput = stage.getMainOutput();
+      mainOutput.disconnect(); // Disconnect from current destination
+      mainOutput.connect(analyserNode);
+      analyserNode.connect(audioContext.destination);
+      
+      setAnalyser(analyserNode);
       setInstrumentsLoaded(true);
     } catch (error) {
       console.error("Failed to create instruments:", error);
@@ -707,6 +721,16 @@ export default function ReactTestPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="my-6">
+        <SpectrogramDisplay
+          audioContext={audioContext}
+          isActive={!!sequencerRef.current}
+          analyser={analyser}
+          width={800}
+          height={200}
+        />
       </div>
 
       <div className="my-6">
