@@ -62,6 +62,7 @@ export default function ReactTestPage() {
     });
 
   const sequencerRef = useRef<Sequencer | null>(null);
+  const [isSequencerRunning, setIsSequencerRunning] = useState(false);
   const [instrumentsLoading, setInstrumentsLoading] = useState(false);
   const [instrumentsLoaded, setInstrumentsLoaded] = useState(false);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
@@ -334,14 +335,12 @@ export default function ReactTestPage() {
       // Create and connect analyser node for spectrogram
       const analyserNode = audioContext.createAnalyser();
       analyserNode.fftSize = 2048;
-      analyserNode.smoothingTimeConstant = 0.8;
-      
-      // Connect the stage's main output to the analyser, then to destination
+      analyserNode.smoothingTimeConstant = 0.0;
+
+      // Tap the stage's main output into the analyser without altering routing
       const mainOutput = stage.getMainOutput();
-      mainOutput.disconnect(); // Disconnect from current destination
       mainOutput.connect(analyserNode);
-      analyserNode.connect(audioContext.destination);
-      
+
       setAnalyser(analyserNode);
       setInstrumentsLoaded(true);
     } catch (error) {
@@ -406,6 +405,7 @@ export default function ReactTestPage() {
 
       // Start beat tracking
       startBeatTracking();
+      setIsSequencerRunning(true);
     }
   };
 
@@ -415,6 +415,7 @@ export default function ReactTestPage() {
       sequencerRef.current = null;
     }
     stopBeatTracking();
+    setIsSequencerRunning(false);
   };
 
   const handleRandomizePattern = (instrumentName: string) => {
@@ -726,7 +727,7 @@ export default function ReactTestPage() {
       <div className="my-6">
         <SpectrogramDisplay
           audioContext={audioContext}
-          isActive={!!sequencerRef.current}
+          isActive={isSequencerRunning}
           analyser={analyser}
           width={800}
           height={200}

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState } from "react";
 
 interface SpectrogramDisplayProps {
   audioContext: AudioContext | null;
@@ -10,12 +10,12 @@ interface SpectrogramDisplayProps {
   analyser?: AnalyserNode | null;
 }
 
-export default function SpectrogramDisplay({ 
-  audioContext, 
-  isActive, 
-  width = 800, 
-  height = 200, 
-  analyser 
+export default function SpectrogramDisplay({
+  audioContext,
+  isActive,
+  width = 800,
+  height = 200,
+  analyser,
 }: SpectrogramDisplayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -28,15 +28,16 @@ export default function SpectrogramDisplay({
 
     const initSpectrogram = async () => {
       try {
-        const spectrogramModule = await import('spectrogram');
+        const spectrogramModule = await import("spectrogram");
         const Spectrogram = spectrogramModule.default || spectrogramModule;
-        
-        const spectrogram = new (Spectrogram as any)({
-          canvas: canvasRef.current,
+
+        if (!canvasRef.current) return
+
+        const spectrogram = new Spectrogram(canvasRef.current, {
           audio: {
-            enable: false // We'll provide data manually
+            enable: false, // We'll provide data manually
           },
-          colors: function(steps: number) {
+          colors: function (steps: number) {
             const colors = [];
             for (let i = 0; i < steps; i++) {
               const ratio = i / steps;
@@ -48,19 +49,15 @@ export default function SpectrogramDisplay({
             }
             return colors;
           },
-          frequencyLabels: true,
-          timeLabels: true,
-          windowFunction: 'hanning',
-          fftSize: 2048,
-          noverlap: 512,
-          zoomLevel: 1
         });
-        
+
+        // Connect the analyser node to the spectrogram
+        spectrogram.connectSource(analyser as any);
         setSpectrogramInstance(spectrogram);
       } catch (error) {
-        console.error('Failed to initialize spectrogram:', error);
+        console.error("Failed to initialize spectrogram:", error);
         // Fall back to manual drawing mode
-        console.log('Using manual spectrogram drawing mode');
+        console.log("Using manual spectrogram drawing mode");
       }
     };
 
@@ -74,20 +71,76 @@ export default function SpectrogramDisplay({
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
+      // Stop the spectrogram when inactive
+      if (spectrogramInstance) {
+        try {
+          spectrogramInstance.stop();
+        } catch (error) {
+          console.error("Error stopping spectrogram:", error);
+        }
+      }
       return;
     }
+
+    // Start the spectrogram when active
+    if (spectrogramInstance) {
+      try {
+        spectrogramInstance.start();
+      } catch (error) {
+        console.error("Error starting spectrogram:", error);
+        // Fall back to manual drawing
+        startManualSpectrogram();
+      }
+    } else {
+      // Use manual drawing when spectrogram library is not available
+      startManualSpectrogram();
+    }
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (spectrogramInstance) {
+        try {
+          spectrogramInstance.stop();
+        } catch (error) {
+          console.error("Error stopping spectrogram:", error);
+        }
+      }
+    };
+  }, [isActive, analyser, spectrogramInstance, width]);
+
+  // Cleanup effect
+  useEffect(() => {
+    return () => {
+      if (spectrogramInstance) {
+        try {
+          spectrogramInstance.stop();
+        } catch (error) {
+          console.error("Error stopping spectrogram on cleanup:", error);
+        }
+      }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [spectrogramInstance]);
+
+  // Manual spectrogram animation loop
+  const startManualSpectrogram = () => {
+    if (!isActive || !analyser) return;
 
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
-    function updateSpectrogram() {
-      if (!analyser) return;
+    function updateManualSpectrogram() {
+      if (!analyser || !isActive) return;
 
       // Get frequency data
       analyser.getByteFrequencyData(dataArray);
 
       // Convert to array of numbers normalized to 0-1 range
-      const normalizedData = Array.from(dataArray).map(value => value / 255);
+      const normalizedData = Array.from(dataArray).map((value) => value / 255);
 
       // Add new data to spectrogram
       spectrogramDataRef.current.push(normalizedData);
@@ -98,37 +151,23 @@ export default function SpectrogramDisplay({
         spectrogramDataRef.current.shift();
       }
 
-      // Update the spectrogram visualization
-      if (spectrogramInstance) {
-        try {
-          spectrogramInstance.connectSource(normalizedData);
-        } catch (error) {
-          // If the direct data feeding doesn't work, we'll fall back to manual drawing
-          drawManualSpectrogram(normalizedData);
-        }
-      } else {
-        // Use manual drawing when spectrogram library is not available
-        drawManualSpectrogram(normalizedData);
-      }
+      // Draw the spectrogram manually
+      drawManualSpectrogram(normalizedData);
 
-      animationFrameRef.current = requestAnimationFrame(updateSpectrogram);
+      animationFrameRef.current = requestAnimationFrame(
+        updateManualSpectrogram
+      );
     }
 
-    updateSpectrogram();
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [isActive, analyser, spectrogramInstance, width]);
+    updateManualSpectrogram();
+  };
 
   // Manual spectrogram drawing as fallback
   const drawManualSpectrogram = (frequencyData: number[]) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     // Shift existing image data to the left
@@ -142,12 +181,12 @@ export default function SpectrogramDisplay({
     for (let i = 0; i < frequencyData.length; i++) {
       const y = height - (i / frequencyData.length) * height;
       const intensity = frequencyData[i];
-      
+
       // Color based on intensity
       const hue = (1 - intensity) * 240; // Blue to red
       const saturation = 80;
       const lightness = 20 + intensity * 60;
-      
+
       ctx.fillStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
       ctx.fillRect(x, y, sliceWidth, height / frequencyData.length);
     }
@@ -158,21 +197,23 @@ export default function SpectrogramDisplay({
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-semibold text-white">Spectrogram</h3>
         <div className="flex items-center space-x-2">
-          <div className={`w-3 h-3 rounded-full ${isActive && analyser ? 'bg-green-500' : 'bg-red-500'}`}></div>
+          <div
+            className={`w-3 h-3 rounded-full ${isActive && analyser ? "bg-green-500" : "bg-red-500"}`}
+          ></div>
           <span className="text-sm text-gray-300">
-            {isActive && analyser ? 'Active' : 'Inactive'}
+            {isActive && analyser ? "Active" : "Inactive"}
           </span>
         </div>
       </div>
-      
+
       <canvas
         ref={canvasRef}
         width={width}
         height={height}
         className="w-full border border-gray-500 rounded bg-gray-900"
-        style={{ maxWidth: '100%', height: 'auto' }}
+        style={{ maxWidth: "100%", height: "auto" }}
       />
-      
+
       <div className="mt-2 text-xs text-gray-400 text-center">
         Time-frequency representation of audio output
       </div>
@@ -189,11 +230,11 @@ export const SpectrogramDisplayWithRef = React.forwardRef<
     connectSource: (source: AudioNode) => {
       // This will use the same analyser as the spectrum analyzer
       // No need to create a new connection
-      console.log('Spectrogram display connected to audio source');
-    }
+      console.log("Spectrogram display connected to audio source");
+    },
   }));
 
   return <SpectrogramDisplay {...props} />;
 });
 
-SpectrogramDisplayWithRef.displayName = 'SpectrogramDisplayWithRef';
+SpectrogramDisplayWithRef.displayName = "SpectrogramDisplayWithRef";
