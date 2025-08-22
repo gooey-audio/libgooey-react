@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Slider from "./components/Slider";
 import { FilterConfig } from "@/package/src/filter";
 import { OverdriveParams } from "@/package/src/effects/overdrive";
 import { ReverbParams } from "@/package/src/effects/reverb";
@@ -161,14 +162,14 @@ export default function InstrumentControls({
           <div className="space-y-3">
             <h5 className="text-sm font-medium text-white/90">Volume</h5>
             <div className="flex items-center gap-4">
-              <input
-                type="range"
-                min="0"
-                max="2"
-                step="0.01"
+              <Slider
+                min={0}
+                max={2}
+                step={0.01}
                 value={volumes[currentInstrument] || 1}
-                onChange={(e) => onVolumeChange(currentInstrument, parseFloat(e.target.value))}
-                className="flex-1 h-2 bg-white/20 rounded-lg appearance-none cursor-pointer"
+                onChange={(v) => onVolumeChange(currentInstrument, v)}
+                className="flex-1"
+                ariaLabel={`${currentInstrument} volume`}
               />
               <div className="w-12 text-sm text-white/70">
                 {((volumes[currentInstrument] || 1) * 100).toFixed(0)}%
@@ -196,14 +197,14 @@ export default function InstrumentControls({
                 {/* Frequency */}
                 <div className="flex items-center gap-2">
                   <div className="w-16 text-xs text-white/70">Freq</div>
-                  <input
-                    type="range"
-                    min="100"
-                    max="20000"
-                    step="100"
+                  <Slider
+                    min={100}
+                    max={20000}
+                    step={100}
                     value={currentSettings.frequency}
-                    onChange={(e) => onFilterChange(currentInstrument, "frequency", parseInt(e.target.value))}
-                    className="flex-1 h-2 bg-white/20 rounded-lg appearance-none cursor-pointer"
+                    onChange={(v) => onFilterChange(currentInstrument, "frequency", Math.round(v))}
+                    className="flex-1"
+                    ariaLabel={`${currentInstrument} filter frequency`}
                   />
                   <div className="w-16 text-xs text-white/70">{currentSettings.frequency}Hz</div>
                 </div>
@@ -211,14 +212,14 @@ export default function InstrumentControls({
                 {/* Q */}
                 <div className="flex items-center gap-2">
                   <div className="w-16 text-xs text-white/70">Q</div>
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="10"
-                    step="0.1"
+                  <Slider
+                    min={0.1}
+                    max={10}
+                    step={0.1}
                     value={currentSettings.Q}
-                    onChange={(e) => onFilterChange(currentInstrument, "Q", parseFloat(e.target.value))}
-                    className="flex-1 h-2 bg-white/20 rounded-lg appearance-none cursor-pointer"
+                    onChange={(v) => onFilterChange(currentInstrument, "Q", v)}
+                    className="flex-1"
+                    ariaLabel={`${currentInstrument} filter Q`}
                   />
                   <div className="w-16 text-xs text-white/70">{currentSettings.Q.toFixed(1)}</div>
                 </div>
@@ -265,14 +266,14 @@ export default function InstrumentControls({
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <div className="w-8 text-xs text-white/70">Mix</div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
+                    <Slider
+                      min={0}
+                      max={1}
+                      step={0.01}
                       value={currentEffects.overdrive.params.mix}
-                      onChange={(e) => updateInstrumentOverdrive(currentInstrument, { mix: parseFloat(e.target.value) })}
-                      className="flex-1 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
+                      onChange={(v) => updateInstrumentOverdrive(currentInstrument, { mix: v })}
+                      className="flex-1"
+                      ariaLabel={`${currentInstrument} overdrive mix`}
                     />
                     <div className="w-8 text-xs text-white/70">
                       {(currentEffects.overdrive.params.mix * 100).toFixed(0)}%
@@ -280,14 +281,14 @@ export default function InstrumentControls({
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-8 text-xs text-white/70">Drive</div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1.5"
-                      step="0.01"
+                    <Slider
+                      min={0}
+                      max={1.5}
+                      step={0.01}
                       value={currentEffects.overdrive.params.drive}
-                      onChange={(e) => updateInstrumentOverdrive(currentInstrument, { drive: parseFloat(e.target.value) })}
-                      className="flex-1 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
+                      onChange={(v) => updateInstrumentOverdrive(currentInstrument, { drive: v })}
+                      className="flex-1"
+                      ariaLabel={`${currentInstrument} overdrive drive`}
                     />
                     <div className="w-8 text-xs text-white/70">
                       {currentEffects.overdrive.params.drive.toFixed(2)}
@@ -295,14 +296,14 @@ export default function InstrumentControls({
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-8 text-xs text-white/70">Tone</div>
-                    <input
-                      type="range"
-                      min="100"
-                      max="8000"
-                      step="50"
+                    <Slider
+                      min={100}
+                      max={8000}
+                      step={50}
                       value={currentEffects.overdrive.params.toneHz}
-                      onChange={(e) => updateInstrumentOverdrive(currentInstrument, { toneHz: parseInt(e.target.value) })}
-                      className="flex-1 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
+                      onChange={(v) => updateInstrumentOverdrive(currentInstrument, { toneHz: Math.round(v) })}
+                      className="flex-1"
+                      ariaLabel={`${currentInstrument} overdrive tone`}
                     />
                     <div className="w-8 text-xs text-white/70">
                       {currentEffects.overdrive.params.toneHz}Hz
@@ -331,14 +332,14 @@ export default function InstrumentControls({
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <div className="w-8 text-xs text-white/70">Mix</div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
+                    <Slider
+                      min={0}
+                      max={1}
+                      step={0.01}
                       value={currentEffects.reverb.params.mix}
-                      onChange={(e) => updateInstrumentReverb(currentInstrument, { mix: parseFloat(e.target.value) })}
-                      className="flex-1 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
+                      onChange={(v) => updateInstrumentReverb(currentInstrument, { mix: v })}
+                      className="flex-1"
+                      ariaLabel={`${currentInstrument} reverb mix`}
                     />
                     <div className="w-8 text-xs text-white/70">
                       {(currentEffects.reverb.params.mix * 100).toFixed(0)}%
@@ -346,14 +347,14 @@ export default function InstrumentControls({
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-8 text-xs text-white/70">Pre</div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="200"
-                      step="1"
+                    <Slider
+                      min={0}
+                      max={200}
+                      step={1}
                       value={currentEffects.reverb.params.preDelayMs}
-                      onChange={(e) => updateInstrumentReverb(currentInstrument, { preDelayMs: parseInt(e.target.value) })}
-                      className="flex-1 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
+                      onChange={(v) => updateInstrumentReverb(currentInstrument, { preDelayMs: Math.round(v) })}
+                      className="flex-1"
+                      ariaLabel={`${currentInstrument} reverb pre-delay`}
                     />
                     <div className="w-8 text-xs text-white/70">
                       {currentEffects.reverb.params.preDelayMs}ms
