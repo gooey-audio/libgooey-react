@@ -570,7 +570,7 @@ export default function ReactTestPage() {
                               ? "#3b82f6"
                               : isActive
                                 ? "#10b981"
-                                : "#f3f4f6",
+                                : "transparent",
                             borderRadius: 2,
                             boxShadow: isCurrentStep
                               ? "0 0 0 2px #2563eb"
@@ -590,8 +590,14 @@ export default function ReactTestPage() {
                                 ? "#3b82f6"
                                 : isActive
                                   ? "#10b981"
-                                  : "#e5e7eb"
+                                  : "transparent"
                             }
+                            stroke={
+                              isCurrentStep || isActive
+                                ? "transparent"
+                                : "rgba(255, 255, 255, 0.1)"
+                            }
+                            strokeWidth={1}
                             rx={4}
                           />
                         </svg>
