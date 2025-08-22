@@ -71,6 +71,19 @@ export default function SpectrogramDisplay({
     initSpectrogram();
   }, [analyser, audioContext]);
 
+  // Initialize canvas with clear background
+  const initializeCanvas = React.useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Clear the entire canvas with dark background
+    ctx.fillStyle = '#1F2937'; // Dark gray background
+    ctx.fillRect(0, 0, width, height);
+  }, [width, height]);
+
   // Initialize canvas when component mounts or dimensions change
   useEffect(() => {
     initializeCanvas();
@@ -169,19 +182,6 @@ export default function SpectrogramDisplay({
       }
     };
   }, [spectrogramInstance]);
-
-  // Initialize canvas with clear background
-  const initializeCanvas = React.useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    // Clear the entire canvas with dark background
-    ctx.fillStyle = '#1F2937'; // Dark gray background
-    ctx.fillRect(0, 0, width, height);
-  }, [width, height]);
 
   // Manual spectrogram drawing function
   const drawManualSpectrogram = React.useCallback((frequencyData: number[]) => {
