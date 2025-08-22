@@ -11,6 +11,7 @@ import { FilterConfig } from "@/package/src/filter";
 import { OverdriveParams } from "@/package/src/effects/overdrive";
 import { ReverbParams } from "@/package/src/effects/reverb";
 import InstrumentControls from "./InstrumentControls";
+import SpectrogramDisplay from "./SpectrogramDisplay";
 
 export default function ReactTestPage() {
   const [patterns, setPatterns] = useState({
@@ -61,8 +62,10 @@ export default function ReactTestPage() {
     });
 
   const sequencerRef = useRef<Sequencer | null>(null);
+  const [isSequencerRunning, setIsSequencerRunning] = useState(false);
   const [instrumentsLoading, setInstrumentsLoading] = useState(false);
   const [instrumentsLoaded, setInstrumentsLoaded] = useState(false);
+  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
   // Master-level chain removed; effects are applied per-instrument at creation time
 
   const { currentStep, startBeatTracking, stopBeatTracking } = useBeatTracker({
@@ -329,6 +332,22 @@ export default function ReactTestPage() {
       stage.setInstrumentVolume("pinkHat", volumes.pinkHat);
       stage.setMainVolume(volumes.master);
 
+      // Create and connect analyser node for spectrogram
+      const analyserNode = audioContext.createAnalyser();
+      analyserNode.fftSize = 2048;
+      analyserNode.smoothingTimeConstant = 0.0;
+
+      // Insert analyser node in the audio chain properly
+      const mainOutput = stage.getMainOutput();
+      
+      // Disconnect the current connection to destination
+      mainOutput.disconnect();
+      
+      // Connect: mainOutput -> analyser -> destination
+      mainOutput.connect(analyserNode);
+      analyserNode.connect(audioContext.destination);
+
+      setAnalyser(analyserNode);
       setInstrumentsLoaded(true);
     } catch (error) {
       console.error("Failed to create instruments:", error);
@@ -354,31 +373,49 @@ export default function ReactTestPage() {
     }
   }, [isLoaded, createInstruments, instrumentsLoaded, instrumentsLoading]);
 
-  const triggerKick = () => {
-    if (stage && instrumentsLoaded) {
+  const triggerKick = async () => {
+    if (stage && instrumentsLoaded && audioContext) {
+      // Ensure audio context is running
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
       stage.trigger("kick");
       console.log("Kick triggered!");
     }
   };
 
-  const triggerSnare = () => {
-    if (stage && instrumentsLoaded) {
+  const triggerSnare = async () => {
+    if (stage && instrumentsLoaded && audioContext) {
+      // Ensure audio context is running
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
       stage.trigger("snare");
       console.log("Snare triggered!");
     }
   };
 
-  const triggerPinkHat = () => {
-    if (stage && instrumentsLoaded) {
+  const triggerPinkHat = async () => {
+    if (stage && instrumentsLoaded && audioContext) {
+      // Ensure audio context is running
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
       stage.trigger("pinkHat");
       console.log("Pink Hat triggered!");
     }
   };
 
-  const startSequencer = () => {
+  const startSequencer = async () => {
     const ctx = audioContext;
 
     if (ctx && stage && !sequencerRef.current && instrumentsLoaded) {
+      // Ensure audio context is running - required in modern browsers
+      if (ctx.state === 'suspended') {
+        console.log('Resuming audio context...');
+        await ctx.resume();
+      }
+      
       const sequencer = new Sequencer(ctx, {
         tempo: 120,
         stage,
@@ -392,6 +429,9 @@ export default function ReactTestPage() {
 
       // Start beat tracking
       startBeatTracking();
+      setIsSequencerRunning(true);
+      
+      console.log('Sequencer started, audio context state:', ctx.state);
     }
   };
 
@@ -401,6 +441,7 @@ export default function ReactTestPage() {
       sequencerRef.current = null;
     }
     stopBeatTracking();
+    setIsSequencerRunning(false);
   };
 
   const handleRandomizePattern = (instrumentName: string) => {
@@ -707,6 +748,16 @@ export default function ReactTestPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="my-6">
+        <SpectrogramDisplay
+          audioContext={audioContext}
+          isActive={isSequencerRunning}
+          analyser={analyser}
+          width={800}
+          height={200}
+        />
       </div>
 
       <div className="my-6">
