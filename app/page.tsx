@@ -12,6 +12,7 @@ import { OverdriveParams } from "@/package/src/effects/overdrive";
 import { ReverbParams } from "@/package/src/effects/reverb";
 import InstrumentControls from "./InstrumentControls";
 import Slider from "./components/Slider";
+import SequencerUI from "./components/Sequencer";
 
 export default function ReactTestPage() {
   const [patterns, setPatterns] = useState({
@@ -532,83 +533,14 @@ export default function ReactTestPage() {
         </div>
 
         {activeTab === "sequencer" && (
-          <div className="overflow-auto">
-            <h3 className="text-lg font-semibold mb-3">Sequencer Pattern</h3>
-            <div className="space-y-2">
-              {instruments.map((instrument) => (
-                <div key={instrument} className="flex items-center gap-2">
-                  <div className="w-16 text-sm font-medium text-gray-700">
-                    {instrument}
-                  </div>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => handleClearPattern(instrument)}
-                      className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-                      title="Clear pattern"
-                    >
-                      Clear
-                    </button>
-                    <button
-                      onClick={() => handleRandomizePattern(instrument)}
-                      className="px-2 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
-                      title="Randomize pattern"
-                    >
-                      Random
-                    </button>
-                    {Array.from({ length: 16 }).map((_, i) => {
-                      const isActive =
-                        patterns[instrument as keyof typeof patterns][i] === 1;
-                      const isCurrentStep = i === currentStep - 1; // currentStep is 1-indexed, array is 0-indexed
-
-                      return (
-                        <svg
-                          key={i}
-                          width={24}
-                          height={24}
-                          style={{
-                            background: isCurrentStep
-                              ? "#3b82f6"
-                              : isActive
-                                ? "#10b981"
-                                : "transparent",
-                            borderRadius: 2,
-                            boxShadow: isCurrentStep
-                              ? "0 0 0 2px #2563eb"
-                              : undefined,
-                            transition: "background 0.2s, box-shadow 0.2s",
-                            cursor: "pointer",
-                          }}
-                          onClick={() => handlePatternClick(instrument, i)}
-                        >
-                          <rect
-                            x={2}
-                            y={2}
-                            width={20}
-                            height={20}
-                            fill={
-                              isCurrentStep
-                                ? "#3b82f6"
-                                : isActive
-                                  ? "#10b981"
-                                  : "transparent"
-                            }
-                            stroke={
-                              isCurrentStep || isActive
-                                ? "transparent"
-                                : "rgba(255, 255, 255, 0.1)"
-                            }
-                            strokeWidth={1}
-                            rx={4}
-                          />
-                        </svg>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-2 text-sm text-gray-600">Current Step: {currentStep}</div>
-          </div>
+          <SequencerUI
+            patterns={patterns}
+            currentStep={currentStep}
+            instruments={instruments}
+            onPatternClick={handlePatternClick}
+            onClearPattern={handleClearPattern}
+            onRandomizePattern={handleRandomizePattern}
+          />
         )}
 
         {activeTab === "master" && (
@@ -616,7 +548,9 @@ export default function ReactTestPage() {
             <div className="max-w-2xl mb-6">
               <h3 className="text-lg font-semibold mb-3">Master Volume</h3>
               <div className="flex items-center gap-4">
-                <div className="w-16 text-sm font-medium text-gray-700">Master</div>
+                <div className="w-16 text-sm font-medium text-gray-700">
+                  Master
+                </div>
                 <Slider
                   min={0}
                   max={2}
@@ -685,7 +619,9 @@ export default function ReactTestPage() {
                       max={8000}
                       step={50}
                       value={overdriveSettings.params.toneHz}
-                      onChange={(v) => updateOverdrive({ toneHz: Math.round(v) })}
+                      onChange={(v) =>
+                        updateOverdrive({ toneHz: Math.round(v) })
+                      }
                       className="flex-1"
                       ariaLabel="Overdrive tone"
                     />
@@ -703,7 +639,9 @@ export default function ReactTestPage() {
                     <input
                       type="checkbox"
                       checked={reverbSettings.enabled}
-                      onChange={(e) => updateReverb({ enabled: e.target.checked })}
+                      onChange={(e) =>
+                        updateReverb({ enabled: e.target.checked })
+                      }
                     />
                     <span className="text-sm text-white/70">Enable</span>
                   </label>
@@ -731,7 +669,9 @@ export default function ReactTestPage() {
                       max={200}
                       step={1}
                       value={reverbSettings.params.preDelayMs}
-                      onChange={(v) => updateReverb({ preDelayMs: Math.round(v) })}
+                      onChange={(v) =>
+                        updateReverb({ preDelayMs: Math.round(v) })
+                      }
                       className="flex-1"
                       ariaLabel="Reverb predelay"
                     />
@@ -761,10 +701,14 @@ export default function ReactTestPage() {
       <div className="flex-[0_0_20%] p-4 overflow-hidden">
         <div className="flex gap-4 h-full">
           <div className="flex-1 bg-black/20 border border-white/10 rounded-xl flex items-center justify-center">
-            <span className="text-white/70 text-sm">Spectrogram (placeholder)</span>
+            <span className="text-white/70 text-sm">
+              Spectrogram (placeholder)
+            </span>
           </div>
           <div className="flex-1 bg-black/20 border border-white/10 rounded-xl flex items-center justify-center">
-            <span className="text-white/70 text-sm">Spectrum Analyzer (placeholder)</span>
+            <span className="text-white/70 text-sm">
+              Spectrum Analyzer (placeholder)
+            </span>
           </div>
         </div>
       </div>
