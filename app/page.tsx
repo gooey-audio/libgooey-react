@@ -13,6 +13,7 @@ import { ReverbParams } from "@/package/src/effects/reverb";
 import InstrumentControls from "./InstrumentControls";
 import Slider from "./components/Slider";
 import SequencerUI from "./components/Sequencer";
+import SpectrumAnalyzer from "./components/SpectrumAnalyzer";
 
 export default function ReactTestPage() {
   const [patterns, setPatterns] = useState({
@@ -67,7 +68,12 @@ export default function ReactTestPage() {
     });
 
   const sequencerRef = useRef<Sequencer | null>(null);
+
+  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
+  const [monitorGain, setMonitorGain] = useState<GainNode | null>(null);
+
   const [instrumentsLoading, setInstrumentsLoading] = useState(false);
+
   const [instrumentsLoaded, setInstrumentsLoaded] = useState(false);
   // Master-level chain removed; effects are applied per-instrument at creation time
 
@@ -75,6 +81,44 @@ export default function ReactTestPage() {
     audioContext,
     sequencerRef,
   });
+  // Setup spectrum analyzer and monitoring node when audioContext is ready
+  useEffect(() => {
+    if (!audioContext) return;
+
+    let localAnalyser: AnalyserNode | null = null;
+    let localMonitor: GainNode | null = null;
+    try {
+      localAnalyser = audioContext.createAnalyser();
+      localAnalyser.fftSize = 2048;
+      localAnalyser.smoothingTimeConstant = 0.8;
+
+      localMonitor = audioContext.createGain();
+      localMonitor.gain.value = 1.0; // unity gain; this tap is not routed to destination
+      localMonitor.connect(localAnalyser);
+
+      setAnalyser(localAnalyser);
+      setMonitorGain(localMonitor);
+    } catch (e) {
+      console.error("Failed to initialize spectrum analyzer:", e);
+    }
+
+    return () => {
+      try {
+        if (localMonitor) localMonitor.disconnect();
+      } catch {}
+    };
+  }, [audioContext]);
+
+  // Connect stage output to monitor when available
+  useEffect(() => {
+    if (!stage || !monitorGain) return;
+    try {
+      stage.getMainOutput().connect(monitorGain);
+    } catch (e) {
+      // ignore duplicate connections
+    }
+  }, [stage, monitorGain]);
+
 
   // const handleInitialize = async () => {
   //   await initialize();
@@ -335,6 +379,8 @@ export default function ReactTestPage() {
       stage.setInstrumentVolume("pinkHat", volumes.pinkHat);
       stage.setMainVolume(volumes.master);
 
+      // Stage connection to monitor is handled by a separate effect
+
       setInstrumentsLoaded(true);
     } catch (error) {
       console.error("Failed to create instruments:", error);
@@ -351,6 +397,7 @@ export default function ReactTestPage() {
     makeKick,
     makeSnare,
     makePinkHat,
+    monitorGain,
   ]);
 
   // Effect to create instruments when audio context is ready and on hot reload
@@ -700,16 +747,20 @@ export default function ReactTestPage() {
       {/* Bottom 20%: Visual placeholders */}
       <div className="flex-[0_0_20%] p-4 overflow-hidden">
         <div className="flex gap-4 h-full">
-          <div className="flex-1 bg-black/20 border border-white/10 rounded-xl flex items-center justify-center">
+          {/* <div className="flex-1 bg-black/20 border border-white/10 rounded-xl flex items-center justify-center">
             <span className="text-white/70 text-sm">
               Spectrogram (placeholder)
             </span>
-          </div>
-          <div className="flex-1 bg-black/20 border border-white/10 rounded-xl flex items-center justify-center">
-            <span className="text-white/70 text-sm">
-              Spectrum Analyzer (placeholder)
-            </span>
-          </div>
+          </div> */}
+          {analyser && (
+            <SpectrumAnalyzer
+              audioContext={audioContext}
+              isActive={instrumentsLoaded}
+              width={200}
+              height={50}
+              analyser={analyser}
+            />
+          )}
         </div>
       </div>
     </div>
