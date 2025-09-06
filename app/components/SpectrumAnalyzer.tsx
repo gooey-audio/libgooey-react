@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from "react";
 
 interface SpectrumAnalyzerProps {
   audioContext: AudioContext | null;
@@ -8,13 +8,68 @@ interface SpectrumAnalyzerProps {
   analyser?: AnalyserNode | null;
 }
 
-export default function SpectrumAnalyzer({ audioContext, isActive, analyser }: SpectrumAnalyzerProps) {
+export default function SpectrumAnalyzer({
+  audioContext,
+  isActive,
+  analyser,
+}: SpectrumAnalyzerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+
+  // Setup canvas size and resolution
+  const setupCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+
+    // Only update if size has changed
+    if (width !== canvasSize.width || height !== canvasSize.height) {
+      setCanvasSize({ width, height });
+
+      // Set actual canvas resolution
+      canvas.width = width * window.devicePixelRatio;
+      canvas.height = height * window.devicePixelRatio;
+
+      const context = canvas.getContext("2d");
+      if (context) {
+        context.scale(window.devicePixelRatio, window.devicePixelRatio);
+      }
+    }
+  }, [canvasSize.width, canvasSize.height]);
+
+  // Handle canvas resizing
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Initial setup
+    setupCanvas();
+
+    // Use ResizeObserver for better performance
+    const resizeObserver = new ResizeObserver(() => {
+      setupCanvas();
+    });
+
+    resizeObserver.observe(canvas);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [setupCanvas]);
 
   // Animation loop for drawing the spectrum
   useEffect(() => {
-    if (!isActive || !analyser || !canvasRef.current) {
+    if (
+      !isActive ||
+      !analyser ||
+      !canvasRef.current ||
+      canvasSize.width === 0 ||
+      canvasSize.height === 0
+    ) {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
@@ -23,19 +78,12 @@ export default function SpectrumAnalyzer({ audioContext, isActive, analyser }: S
     }
 
     const canvas = canvasRef.current;
-    const canvasContext = canvas.getContext('2d');
+    const canvasContext = canvas.getContext("2d");
+    if (!canvasContext) return;
+
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
-
-    // Set canvas size to match its display size
-    const rect = canvas.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    
-    // Set actual canvas resolution
-    canvas.width = width * window.devicePixelRatio;
-    canvas.height = height * window.devicePixelRatio;
-    canvasContext.scale(window.devicePixelRatio, window.devicePixelRatio);
+    const { width, height } = canvasSize;
 
     function draw() {
       if (!canvasContext || !analyser) return;
@@ -44,11 +92,11 @@ export default function SpectrumAnalyzer({ audioContext, isActive, analyser }: S
       analyser.getByteFrequencyData(dataArray);
 
       // Clear canvas
-      canvasContext.fillStyle = 'rgb(30, 30, 30)';
+      canvasContext.fillStyle = "rgb(30, 30, 30)";
       canvasContext.fillRect(0, 0, width, height);
 
       // Draw interpolated line
-      canvasContext.strokeStyle = 'white';
+      canvasContext.strokeStyle = "white";
       canvasContext.lineWidth = 2;
       canvasContext.beginPath();
 
@@ -78,18 +126,14 @@ export default function SpectrumAnalyzer({ audioContext, isActive, analyser }: S
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isActive, analyser]);
+  }, [isActive, analyser, canvasSize]);
 
   return (
     <div className="spectrum-analyzer-container w-full h-full flex flex-col">
       <canvas
         ref={canvasRef}
-        className="w-full h-full border border-white/20 rounded bg-gray-900 block"
+        className="w-1/2 h-[80px] border border-white/20 rounded bg-gray-900 block"
       />
-      
-      <div className="mt-2 text-xs text-white/70 text-center">
-        Real-time frequency analysis of final audio output
-      </div>
     </div>
   );
 }

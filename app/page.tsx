@@ -806,25 +806,19 @@ export default function ReactTestPage() {
       </main>
 
       {/* Analyzer Section - Full width */}
-      <section className="h-[15%] w-full p-4 border-t border-white/20">
+      <section className="w-full p-4 border-t border-white/20">
         <Card className="h-full p-4">
-          <h3>SUP</h3>
-          {/* <h3 className="text-lg font-semibold mb-2 text-white">Spectrum Analyzer</h3>
-          <div className="h-[calc(100%-2rem)] flex items-center justify-center">
-            <div className="w-1/2">
-              {analyser ? (
-                <SpectrumAnalyzer
-                  audioContext={audioContext}
-                  isActive={instrumentsLoaded}
-                  analyser={analyser}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-20 text-white/70 text-sm">
-                  Spectrum analyzer loading...
-                </div>
-              )}
+          {analyser ? (
+            <SpectrumAnalyzer
+              audioContext={audioContext}
+              isActive={instrumentsLoaded}
+              analyser={analyser}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-20 text-white/70 text-sm">
+              Spectrum analyzer loading...
             </div>
-          </div> */}
+          )}
         </Card>
       </section>
 

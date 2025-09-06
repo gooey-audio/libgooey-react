@@ -33,7 +33,7 @@ export default function Sequencer({
               className="flex-1 aspect-square bg-red-500/20 border border-red-400/30 rounded text-xs text-red-300 hover:bg-red-500/40 hover:border-red-400/50 transition-all duration-200 flex items-center justify-center"
               title="Clear pattern"
             >
-              C
+              x
             </button>
 
             {/* Random button */}
@@ -42,7 +42,7 @@ export default function Sequencer({
               className="flex-1 aspect-square bg-purple-500/20 border border-purple-400/30 rounded text-xs text-purple-300 hover:bg-purple-500/40 hover:border-purple-400/50 transition-all duration-200 flex items-center justify-center"
               title="Randomize pattern"
             >
-              R
+              rnd
             </button>
 
             {/* Step buttons */}
