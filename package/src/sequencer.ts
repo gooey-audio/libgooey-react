@@ -87,7 +87,12 @@ export class Sequencer {
 
   private scheduler() {
     while (this.nextNoteTime < this.ctx.currentTime + this.scheduleAheadTime) {
-      console.log("scheduling step", this.current16thNote + 1, "at time", this.nextNoteTime);
+      console.log(
+        "scheduling step",
+        this.current16thNote + 1,
+        "at time",
+        this.nextNoteTime
+      );
       this.scheduleNote(this.nextNoteTime);
       this.advanceNextNote();
     }
@@ -110,7 +115,11 @@ export class Sequencer {
   }
 
   public isRunning(): boolean {
-    return this.intervalRef !== undefined && this.startTime !== undefined && this.startTime > 0;
+    return (
+      this.intervalRef !== undefined &&
+      this.startTime !== undefined &&
+      this.startTime > 0
+    );
   }
 
   public setPattern(instrumentName: string, pattern: number[]) {
@@ -118,7 +127,9 @@ export class Sequencer {
   }
 
   public getPattern(instrumentName: string): number[] | undefined {
-    return this.pattern[instrumentName] ? [...this.pattern[instrumentName]] : undefined;
+    return this.pattern[instrumentName]
+      ? [...this.pattern[instrumentName]]
+      : undefined;
   }
 
   // todo rename
