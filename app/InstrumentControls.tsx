@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { Card } from "./ui";
 import Slider from "./components/Slider";
 import { FilterConfig } from "@/package/src/filter";
 import { OverdriveParams } from "@/package/src/effects/overdrive";
@@ -154,7 +155,7 @@ export default function InstrumentControls({
       </div>
 
       {/* Current Instrument Control Panel */}
-      <div className="p-4 border border-white/20 rounded-lg bg-black/40 backdrop-blur-sm">
+      <Card className="p-4">
         <h4 className="text-md font-semibold mb-4 capitalize text-white">{currentInstrument} Controls</h4>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -248,7 +249,7 @@ export default function InstrumentControls({
             <h5 className="text-sm font-medium text-white/90">Effects</h5>
             
             {/* Overdrive */}
-            <div className="p-3 border border-white/30 rounded bg-black/30">
+            <Card className="p-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="text-xs font-medium text-white">Overdrive</div>
                 <label className="flex items-center gap-1">
@@ -311,10 +312,10 @@ export default function InstrumentControls({
                   </div>
                 </div>
               )}
-            </div>
+            </Card>
 
             {/* Reverb */}
-            <div className="p-3 border border-white/30 rounded bg-black/30">
+            <Card className="p-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="text-xs font-medium text-white">Reverb</div>
                 <label className="flex items-center gap-1">
@@ -362,10 +363,10 @@ export default function InstrumentControls({
                   </div>
                 </div>
               )}
-            </div>
+            </Card>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

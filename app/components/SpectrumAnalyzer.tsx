@@ -5,12 +5,10 @@ import React, { useRef, useEffect, useState } from 'react';
 interface SpectrumAnalyzerProps {
   audioContext: AudioContext | null;
   isActive: boolean;
-  width?: number;
-  height?: number;
   analyser?: AnalyserNode | null;
 }
 
-export default function SpectrumAnalyzer({ audioContext, isActive, width = 400, height = 100, analyser }: SpectrumAnalyzerProps) {
+export default function SpectrumAnalyzer({ audioContext, isActive, analyser }: SpectrumAnalyzerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
 
@@ -29,13 +27,21 @@ export default function SpectrumAnalyzer({ audioContext, isActive, width = 400, 
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
+    // Set canvas size to match its display size
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    
+    // Set actual canvas resolution
+    canvas.width = width * window.devicePixelRatio;
+    canvas.height = height * window.devicePixelRatio;
+    canvasContext.scale(window.devicePixelRatio, window.devicePixelRatio);
+
     function draw() {
       if (!canvasContext || !analyser) return;
 
       // Get frequency data
       analyser.getByteFrequencyData(dataArray);
-
-      // console.log('GET BYPTES DATA', dataArray)
 
       // Clear canvas
       canvasContext.fillStyle = 'rgb(30, 30, 30)';
@@ -72,29 +78,16 @@ export default function SpectrumAnalyzer({ audioContext, isActive, width = 400, 
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isActive, width, height, analyser]);
+  }, [isActive, analyser]);
 
   return (
-    <div className="spectrum-analyzer-container bg-black/20 border border-white/10 rounded-xl backdrop-blur-sm p-4">
-      {/* <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg font-semibold text-white">Spectrum Analyzer</h3>
-        <div className="flex items-center space-x-2">
-          <div className={`w-3 h-3 rounded-full ${isActive && analyser ? 'bg-green-500' : 'bg-red-500'}`}></div>
-          <span className="text-sm text-gray-300">
-            {isActive && analyser ? 'Active' : 'Inactive'}
-          </span>
-        </div>
-      </div> */}
-      
+    <div className="spectrum-analyzer-container w-full h-full flex flex-col">
       <canvas
         ref={canvasRef}
-        width={width}
-        height={height}
-        className="border border-gray-500 rounded bg-gray-900"
-        style={{ width: `${width}px`, height: `${height}px` }}
+        className="w-full h-full border border-white/20 rounded bg-gray-900 block"
       />
       
-      <div className="mt-2 text-xs text-gray-400 text-center">
+      <div className="mt-2 text-xs text-white/70 text-center">
         Real-time frequency analysis of final audio output
       </div>
     </div>

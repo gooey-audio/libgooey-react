@@ -25,6 +25,9 @@ export class Sequencer {
 
   public startTime: number | undefined;
   public currentBeat: number = 0;
+  public getCurrentStep(): number {
+    return this.current16thNote;
+  }
 
   constructor(ctx: AudioContext, opts: SequencerOpts) {
     this.ctx = ctx;
@@ -84,7 +87,7 @@ export class Sequencer {
 
   private scheduler() {
     while (this.nextNoteTime < this.ctx.currentTime + this.scheduleAheadTime) {
-      console.log("current 16th", this.current16thNote);
+      console.log("scheduling step", this.current16thNote + 1, "at time", this.nextNoteTime);
       this.scheduleNote(this.nextNoteTime);
       this.advanceNextNote();
     }
@@ -92,13 +95,22 @@ export class Sequencer {
 
   public start() {
     this.startTime = this.ctx.currentTime;
+    this.nextNoteTime = this.ctx.currentTime;
+    this.current16thNote = 0;
     this.intervalRef = setInterval(this.scheduler.bind(this), this.lookahead);
   }
 
   public stop() {
     if (this.intervalRef) {
       clearInterval(this.intervalRef);
+      this.intervalRef = undefined;
     }
+    this.startTime = undefined;
+    this.current16thNote = 0;
+  }
+
+  public isRunning(): boolean {
+    return this.intervalRef !== undefined && this.startTime !== undefined && this.startTime > 0;
   }
 
   public setPattern(instrumentName: string, pattern: number[]) {

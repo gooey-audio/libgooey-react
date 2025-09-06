@@ -10,6 +10,7 @@ import { useBeatTracker } from "@/package/src/hooks";
 import { FilterConfig } from "@/package/src/filter";
 import { OverdriveParams } from "@/package/src/effects/overdrive";
 import { ReverbParams } from "@/package/src/effects/reverb";
+import { Button, Card, Tabs } from "./ui";
 import InstrumentControls from "./InstrumentControls";
 import Slider from "./components/Slider";
 import SequencerUI from "./components/Sequencer";
@@ -59,8 +60,8 @@ export default function ReactTestPage() {
   });
 
   const [activeTab, setActiveTab] = useState<
-    "sequencer" | "instruments" | "master"
-  >("sequencer");
+    "instruments" | "master"
+  >("instruments");
 
   const { audioContext, isLoaded, isLoading, error, initialize, stage } =
     useLibGooey({
@@ -75,6 +76,7 @@ export default function ReactTestPage() {
   const [instrumentsLoading, setInstrumentsLoading] = useState(false);
 
   const [instrumentsLoaded, setInstrumentsLoaded] = useState(false);
+  const [sequencerStarting, setSequencerStarting] = useState(false);
   // Master-level chain removed; effects are applied per-instrument at creation time
 
   const { currentStep, startBeatTracking, stopBeatTracking } = useBeatTracker({
@@ -428,23 +430,49 @@ export default function ReactTestPage() {
     }
   };
 
-  const startSequencer = () => {
+  const startSequencer = async () => {
     const ctx = audioContext;
 
-    if (ctx && stage && !sequencerRef.current && instrumentsLoaded) {
-      const sequencer = new Sequencer(ctx, {
-        tempo: 120,
-        stage,
-        // for now lets assume that we'll reference the instruments by name
-        // could make sense to validate that they exist during constructor
-        pattern: patterns,
-      });
+    if (ctx && stage && !sequencerRef.current && instrumentsLoaded && !sequencerStarting) {
+      setSequencerStarting(true);
+      
+      try {
+        const sequencer = new Sequencer(ctx, {
+          tempo: 120,
+          stage,
+          // for now lets assume that we'll reference the instruments by name
+          // could make sense to validate that they exist during constructor
+          pattern: patterns,
+        });
 
-      sequencerRef.current = sequencer;
-      sequencer.start();
+        sequencerRef.current = sequencer;
+        sequencer.start();
 
-      // Start beat tracking
-      startBeatTracking();
+        // Wait for the sequencer to properly initialize and start scheduling
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Verify the sequencer actually started
+        if (sequencer.isRunning()) {
+          startBeatTracking();
+        } else {
+          console.warn("Sequencer failed to initialize properly, retrying...");
+          // Retry once
+          sequencer.stop();
+          await new Promise(resolve => setTimeout(resolve, 50));
+          sequencer.start();
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          if (sequencer.isRunning()) {
+            startBeatTracking();
+          } else {
+            console.error("Sequencer failed to start after retry");
+          }
+        }
+      } catch (error) {
+        console.error("Failed to start sequencer:", error);
+      } finally {
+        setSequencerStarting(false);
+      }
     }
   };
 
@@ -454,6 +482,7 @@ export default function ReactTestPage() {
       sequencerRef.current = null;
     }
     stopBeatTracking();
+    setSequencerStarting(false);
   };
 
   const handleRandomizePattern = (instrumentName: string) => {
@@ -504,265 +533,301 @@ export default function ReactTestPage() {
 
   const instruments = Object.keys(patterns);
 
+  const tabs = [
+    { id: "instruments", label: "Instruments" },
+    { id: "master", label: "Master" },
+  ];
+
   return (
-    <div className="h-screen w-screen flex flex-col">
-      {/* Top 10%: Buttons only, centered horizontally */}
-      <div className="flex-[0_0_10%] p-4 overflow-hidden">
-        <div className="h-full flex items-center justify-center gap-4">
-          <button
+    <div className="h-screen flex flex-col bg-black text-white">
+      {/* Top Bar - 10% height */}
+      <header className="w-full bg-black border-b border-white/20 flex items-center justify-between px-6">
+        <h1 className="text-xl font-bold">LibGooey Drum Machine</h1>
+        <div className="flex gap-4">
+          <Button
             onClick={triggerKick}
-            className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
+            variant="secondary"
+            size="default"
+            className="px-4 py-2"
           >
             Kick
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={triggerSnare}
-            className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
+            variant="secondary"
+            size="default"
+            className="px-4 py-2"
           >
             Snare
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={triggerPinkHat}
-            className="px-6 py-3 bg-pink-500/20 border border-pink-300/20 rounded-xl text-white font-medium hover:bg-pink-500/40 hover:border-pink-300/40 transition-all duration-200 backdrop-blur-sm"
+            variant="secondary"
+            size="default"
+            className="px-4 py-2 bg-pink-500/20 border-pink-300/20 hover:bg-pink-500/40"
           >
             Pink Hat
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={startSequencer}
-            className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
+            variant="default"
+            size="default"
+            className="w-16 h-16 p-0 flex items-center justify-center"
+            disabled={sequencerStarting}
           >
-            Start
-          </button>
-          <button
+            {sequencerStarting ? (
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+            ) : (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            )}
+          </Button>
+          <Button
             onClick={stopSequencer}
-            className="px-6 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-medium hover:bg-black/40 hover:border-white/20 transition-all duration-200 backdrop-blur-sm"
+            variant="default"
+            size="default"
+            className="w-16 h-16 p-0 flex items-center justify-center"
           >
-            Stop
-          </button>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="6" width="12" height="12" />
+            </svg>
+          </Button>
         </div>
-      </div>
+      </header>
 
-      {/* Middle 70%: Tabbed Controls (Sequencer, Effects, Instruments, Master) */}
-      <div className="flex-[1_1_70%] p-4 overflow-auto">
-        <div className="mb-4 border-b border-gray-200">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setActiveTab("sequencer")}
-              className={`px-3 py-2 rounded-t-md border-b-2 ${
-                activeTab === "sequencer"
-                  ? "border-white/80 text-white font-bold"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Sequencer
-            </button>
-            <button
-              onClick={() => setActiveTab("instruments")}
-              className={`px-3 py-2 rounded-t-md border-b-2 ${
-                activeTab === "instruments"
-                  ? "border-white/80 text-white font-bold"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Instruments
-            </button>
-            <button
-              onClick={() => setActiveTab("master")}
-              className={`px-3 py-2 rounded-t-md border-b-2 ${
-                activeTab === "master"
-                  ? "border-white/80 text-white font-bold"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Master
-            </button>
+      {/* Main Content Area - 65% height */}
+      <main className="flex flex-col">
+        <div className="flex flex-1">
+          {/* Left Panel - 50% width */}
+          <div className="w-1/2 p-4 border-r border-white/20">
+            <Card className="h-full p-6">
+              <h2 className="text-lg font-semibold mb-4 text-white">Controls</h2>
+
+              {/* Tab Navigation */}
+              <Tabs
+                tabs={tabs}
+                activeTab={activeTab}
+                onTabChange={(tabId) => setActiveTab(tabId as "instruments" | "master")}
+                className="mb-4"
+              />
+
+              {/* Tab Content */}
+              <div className="h-[calc(100%-6rem)] overflow-auto">
+                {activeTab === "master" && (
+                  <div>
+                    <div className="max-w-2xl mb-6">
+                      <h3 className="text-lg font-semibold mb-3 text-white">Master Volume</h3>
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 text-sm font-medium text-white/70">
+                          Master
+                        </div>
+                        <Slider
+                          min={0}
+                          max={2}
+                          step={0.01}
+                          value={volumes.master}
+                          onChange={(v) => handleVolumeChange("master", v)}
+                          className="flex-1"
+                          ariaLabel="Master volume"
+                        />
+                        <div className="w-12 text-sm text-white/70">
+                          {(volumes.master * 100).toFixed(0)}%
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4">
+                      <Card className="p-4 text-white">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="font-medium">Overdrive</div>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={overdriveSettings.enabled}
+                              onChange={(e) =>
+                                updateOverdrive({ enabled: e.target.checked })
+                              }
+                            />
+                            <span className="text-sm text-white/70">Enable</span>
+                          </label>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-4">
+                            <div className="w-20 text-xs text-white/70">Mix</div>
+                            <Slider
+                              min={0}
+                              max={1}
+                              step={0.01}
+                              value={overdriveSettings.params.mix}
+                              onChange={(v) => updateOverdrive({ mix: v })}
+                              className="flex-1"
+                              ariaLabel="Overdrive mix"
+                            />
+                            <div className="w-16 text-xs text-white/70">
+                              {(overdriveSettings.params.mix * 100).toFixed(0)}%
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="w-20 text-xs text-white/70">Drive</div>
+                            <Slider
+                              min={0}
+                              max={1.5}
+                              step={0.01}
+                              value={overdriveSettings.params.drive}
+                              onChange={(v) => updateOverdrive({ drive: v })}
+                              className="flex-1"
+                              ariaLabel="Overdrive drive"
+                            />
+                            <div className="w-16 text-xs text-white/70">
+                              {overdriveSettings.params.drive.toFixed(2)}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="w-20 text-xs text-white/70">Tone Hz</div>
+                            <Slider
+                              min={100}
+                              max={8000}
+                              step={50}
+                              value={overdriveSettings.params.toneHz}
+                              onChange={(v) =>
+                                updateOverdrive({ toneHz: Math.round(v) })
+                              }
+                              className="flex-1"
+                              ariaLabel="Overdrive tone"
+                            />
+                            <div className="w-16 text-xs text-white/70">
+                              {overdriveSettings.params.toneHz}Hz
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card className="p-4 text-white">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="font-medium">Reverb</div>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={reverbSettings.enabled}
+                              onChange={(e) =>
+                                updateReverb({ enabled: e.target.checked })
+                              }
+                            />
+                            <span className="text-sm text-white/70">Enable</span>
+                          </label>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-4">
+                            <div className="w-20 text-xs text-white/70">Mix</div>
+                            <Slider
+                              min={0}
+                              max={1}
+                              step={0.01}
+                              value={reverbSettings.params.mix}
+                              onChange={(v) => updateReverb({ mix: v })}
+                              className="flex-1"
+                              ariaLabel="Reverb mix"
+                            />
+                            <div className="w-16 text-xs text-white/70">
+                              {(reverbSettings.params.mix * 100).toFixed(0)}%
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="w-20 text-xs text-white/70">PreDelay</div>
+                            <Slider
+                              min={0}
+                              max={200}
+                              step={1}
+                              value={reverbSettings.params.preDelayMs}
+                              onChange={(v) =>
+                                updateReverb({ preDelayMs: Math.round(v) })
+                              }
+                              className="flex-1"
+                              ariaLabel="Reverb predelay"
+                            />
+                            <div className="w-16 text-xs text-white/70">
+                              {reverbSettings.params.preDelayMs}ms
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === "instruments" && (
+                  <InstrumentControls
+                    instruments={instruments}
+                    volumes={volumes}
+                    filterSettings={filterSettings}
+                    stage={stage}
+                    onVolumeChange={handleVolumeChange}
+                    onFilterChange={handleFilterChange}
+                  />
+                )}
+              </div>
+            </Card>
           </div>
-        </div>
 
-        {activeTab === "sequencer" && (
-          <SequencerUI
-            patterns={patterns}
-            currentStep={currentStep}
-            instruments={instruments}
-            onPatternClick={handlePatternClick}
-            onClearPattern={handleClearPattern}
-            onRandomizePattern={handleRandomizePattern}
-          />
-        )}
-
-        {activeTab === "master" && (
-          <div>
-            <div className="max-w-2xl mb-6">
-              <h3 className="text-lg font-semibold mb-3">Master Volume</h3>
-              <div className="flex items-center gap-4">
-                <div className="w-16 text-sm font-medium text-gray-700">
-                  Master
-                </div>
-                <Slider
-                  min={0}
-                  max={2}
-                  step={0.01}
-                  value={volumes.master}
-                  onChange={(v) => handleVolumeChange("master", v)}
-                  className="flex-1"
-                  ariaLabel="Master volume"
+          {/* Right Panel - 50% width */}
+          <div className="w-1/2 p-4">
+            {/* Sequencer - Takes up full right panel */}
+            <Card className="h-full p-6">
+              <div className="h-[calc(100%-3rem)] overflow-auto">
+                <SequencerUI
+                  patterns={patterns}
+                  currentStep={currentStep}
+                  instruments={instruments}
+                  onPatternClick={handlePatternClick}
+                  onClearPattern={handleClearPattern}
+                  onRandomizePattern={handleRandomizePattern}
                 />
-                <div className="w-12 text-sm text-gray-600">
-                  {(volumes.master * 100).toFixed(0)}%
-                </div>
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-black/20 border border-white/10 rounded-xl backdrop-blur-sm text-white">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="font-medium">Overdrive</div>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={overdriveSettings.enabled}
-                      onChange={(e) =>
-                        updateOverdrive({ enabled: e.target.checked })
-                      }
-                    />
-                    <span className="text-sm text-white/70">Enable</span>
-                  </label>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-4">
-                    <div className="w-20 text-xs text-white/70">Mix</div>
-                    <Slider
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={overdriveSettings.params.mix}
-                      onChange={(v) => updateOverdrive({ mix: v })}
-                      className="flex-1"
-                      ariaLabel="Overdrive mix"
-                    />
-                    <div className="w-16 text-xs text-white/70">
-                      {(overdriveSettings.params.mix * 100).toFixed(0)}%
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="w-20 text-xs text-white/70">Drive</div>
-                    <Slider
-                      min={0}
-                      max={1.5}
-                      step={0.01}
-                      value={overdriveSettings.params.drive}
-                      onChange={(v) => updateOverdrive({ drive: v })}
-                      className="flex-1"
-                      ariaLabel="Overdrive drive"
-                    />
-                    <div className="w-16 text-xs text-white/70">
-                      {overdriveSettings.params.drive.toFixed(2)}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="w-20 text-xs text-white/70">Tone Hz</div>
-                    <Slider
-                      min={100}
-                      max={8000}
-                      step={50}
-                      value={overdriveSettings.params.toneHz}
-                      onChange={(v) =>
-                        updateOverdrive({ toneHz: Math.round(v) })
-                      }
-                      className="flex-1"
-                      ariaLabel="Overdrive tone"
-                    />
-                    <div className="w-16 text-xs text-white/70">
-                      {overdriveSettings.params.toneHz}Hz
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 bg-black/20 border border-white/10 rounded-xl backdrop-blur-sm text-white">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="font-medium">Reverb</div>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={reverbSettings.enabled}
-                      onChange={(e) =>
-                        updateReverb({ enabled: e.target.checked })
-                      }
-                    />
-                    <span className="text-sm text-white/70">Enable</span>
-                  </label>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-4">
-                    <div className="w-20 text-xs text-white/70">Mix</div>
-                    <Slider
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={reverbSettings.params.mix}
-                      onChange={(v) => updateReverb({ mix: v })}
-                      className="flex-1"
-                      ariaLabel="Reverb mix"
-                    />
-                    <div className="w-16 text-xs text-white/70">
-                      {(reverbSettings.params.mix * 100).toFixed(0)}%
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="w-20 text-xs text-white/70">PreDelay</div>
-                    <Slider
-                      min={0}
-                      max={200}
-                      step={1}
-                      value={reverbSettings.params.preDelayMs}
-                      onChange={(v) =>
-                        updateReverb({ preDelayMs: Math.round(v) })
-                      }
-                      className="flex-1"
-                      ariaLabel="Reverb predelay"
-                    />
-                    <div className="w-16 text-xs text-white/70">
-                      {reverbSettings.params.preDelayMs}ms
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            </Card>
           </div>
-        )}
-
-        {activeTab === "instruments" && (
-          <InstrumentControls
-            instruments={instruments}
-            volumes={volumes}
-            filterSettings={filterSettings}
-            stage={stage}
-            onVolumeChange={handleVolumeChange}
-            onFilterChange={handleFilterChange}
-          />
-        )}
-      </div>
-
-      {/* Bottom 20%: Visual placeholders */}
-      <div className="flex-[0_0_20%] p-4 overflow-hidden">
-        <div className="flex gap-4 h-full">
-          {/* <div className="flex-1 bg-black/20 border border-white/10 rounded-xl flex items-center justify-center">
-            <span className="text-white/70 text-sm">
-              Spectrogram (placeholder)
-            </span>
-          </div> */}
-          {analyser && (
-            <SpectrumAnalyzer
-              audioContext={audioContext}
-              isActive={instrumentsLoaded}
-              width={200}
-              height={50}
-              analyser={analyser}
-            />
-          )}
         </div>
-      </div>
+      </main>
+
+      {/* Analyzer Section - Full width */}
+      <section className="h-[15%] w-full p-4 border-t border-white/20">
+        <Card className="h-full p-4">
+          <h3>SUP</h3>
+          {/* <h3 className="text-lg font-semibold mb-2 text-white">Spectrum Analyzer</h3>
+          <div className="h-[calc(100%-2rem)] flex items-center justify-center">
+            <div className="w-1/2">
+              {analyser ? (
+                <SpectrumAnalyzer
+                  audioContext={audioContext}
+                  isActive={instrumentsLoaded}
+                  analyser={analyser}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-20 text-white/70 text-sm">
+                  Spectrum analyzer loading...
+                </div>
+              )}
+            </div>
+          </div> */}
+        </Card>
+      </section>
+
+      {/* Footer - remaining height */}
+      <footer className="h-[10%] w-full bg-black border-t border-white/20 flex items-center justify-between px-6">
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-white/70">BPM: 120</span>
+          <span className="text-sm text-white/70">Step: {currentStep + 1}/16</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-white/70">Master Volume:</span>
+          <div className="w-24 h-2 bg-white/20 rounded-full">
+            <div 
+              className="h-full bg-white rounded-full" 
+              style={{ width: `${volumes.master * 50}%` }}
+            ></div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

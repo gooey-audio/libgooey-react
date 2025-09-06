@@ -17,6 +17,7 @@ export function useBeatTracker({
     if (
       sequencerRef.current &&
       sequencerRef.current.startTime &&
+      sequencerRef.current.startTime > 0 &&
       audioContext
     ) {
       const sequencer = sequencerRef.current;
@@ -25,25 +26,24 @@ export function useBeatTracker({
       // Calculate elapsed time since start
       const elapsedTime = ctx.currentTime - (sequencer.startTime || 0);
 
-      // Duration of one 16th note (you could also calculate this here if not exposing it)
-      const sixteenthNoteDuration = sequencer.getSixteenthNoteTime();
-
-      // Total 16th notes elapsed (use floor to get the current discrete step)
-      const totalSixteenthsElapsed = Math.floor(
-        elapsedTime / sixteenthNoteDuration
-      );
-
-      // Modulo 16 to get the current step (0-15), looping infinitely
-      const step = (totalSixteenthsElapsed % 16) + 1;
+      // Get the current step directly from the sequencer (0-15)
+      const sequencerStep = sequencer.getCurrentStep();
+      // Convert to 1-indexed for display (1-16)
+      const step = sequencerStep + 1;
 
       // Update state if changed (prevents unnecessary re-renders)
       if (currentStep !== step) {
-        console.log(`Step changed from ${currentStep} to ${step}`);
+        console.log(`Step changed from ${currentStep} to ${step} (sequencer step: ${sequencerStep}, elapsed: ${elapsedTime.toFixed(3)}s)`);
         setCurrentStep(step);
       }
 
       // Continue the animation loop
       animationFrameRef.current = requestAnimationFrame(updateCurrentBeat);
+    } else {
+      // If sequencer is not properly initialized, retry in a bit
+      if (sequencerRef.current && audioContext) {
+        animationFrameRef.current = requestAnimationFrame(updateCurrentBeat);
+      }
     }
   };
 
@@ -51,6 +51,8 @@ export function useBeatTracker({
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
+    // Reset to step 1 when starting
+    setCurrentStep(1);
     updateCurrentBeat();
   };
 
